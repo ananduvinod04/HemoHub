@@ -23,6 +23,10 @@ app.use(cors({
 }));
 
 // Routes
+app.get("/", (req, res) => {
+  res.send("🚀 Express Server is Running Successfully!");
+});
+
 app.use('/api/donor', donorRoutes);
 
 // Error handler
