@@ -123,6 +123,29 @@ exports.getDashboard = async (req, res) => {
     lastDonationDate: req.donor.lastDonationDate,
   });
 };
+// Get Appointment History
+exports.getAppointmentHistory = async (req, res) => {
+  try {
+    const donorId = req.donor._id;
+
+    // Find all appointments of the logged-in donor
+    const appointments = await Appointment.find({ donor: donorId })
+      .sort({ date: -1 }) // latest first
+      .select('hospitalName type date status createdAt');
+
+    if (!appointments || appointments.length === 0) {
+      return res.status(404).json({ message: 'No appointments found' });
+    }
+
+    res.status(200).json({
+      totalAppointments: appointments.length,
+      appointments,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // Delete (Cancel) Appointment
 exports.deleteAppointment = async (req, res) => {
