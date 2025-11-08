@@ -6,6 +6,7 @@ const {
   getProfile,
   updateProfile,
   bookAppointment,
+  deleteAppointment,
   getDashboard,
   deleteDonor,
 } = require('../controllers/donorController');
@@ -16,6 +17,7 @@ router.post('/login', loginDonor);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
 router.post('/appointment', protect, bookAppointment);
+router.delete('/appointment/:id', protect, deleteAppointment);
 router.get('/dashboard', protect, getDashboard);
 router.delete('/delete', protect, deleteDonor);
 router.post('/logout', (req, res) => {

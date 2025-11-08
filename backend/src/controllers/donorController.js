@@ -124,6 +124,36 @@ exports.getDashboard = async (req, res) => {
   });
 };
 
+// Delete (Cancel) Appointment
+exports.deleteAppointment = async (req, res) => {
+  try {
+    const appointmentId = req.params.id;
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      donor: req.donor._id, // ensure donor owns it
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found or unauthorized' });
+    }
+
+    // Save appointment details in delete log before deletion
+    await DeleteLog.create({
+      itemType: 'Appointment',
+      deletedData: appointment,
+    });
+
+
+
+     // Delete appointment
+    await appointment.deleteOne();
+
+    res.json({ message: 'Appointment deleted successfully and logged for admin recovery' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Soft Delete Donor
 exports.deleteDonor = async (req, res) => {
   const donor = await Donor.findById(req.donor._id);
