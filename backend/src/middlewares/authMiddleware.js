@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Donor = require('../models/donorModel');
 const Hospital = require('../models/hospitalModel');
+const Admin = require('../models/adminModel');
 
 const Recipient = require('../models/recipientModel');
 
@@ -82,6 +83,35 @@ const protectRecipient = async (req, res, next) => {
   }
 };
 
+//admin protection
+const protectAdmin = async (req, res, next) => {
+  let token;
 
+  // Accept token from Authorization header or cookies
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.token) {
+    token = req.cookies.token;
+  }
 
-module.exports = { protect, protectHospital ,protectRecipient};
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Not authorized, no token' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const admin = await Admin.findById(decoded.id).select('-password');
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    req.admin = admin;
+    next();
+  } catch (error) {
+    console.error('JWT Error:', error.message);
+    res.status(401).json({ success: false, message: 'Not authorized, invalid token' });
+  }
+};
+
+module.exports = { protect, protectHospital ,protectRecipient,protectAdmin};
