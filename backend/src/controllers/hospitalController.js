@@ -4,7 +4,8 @@ const Appointment = require('../models/appointmentModel');
 const RecipientRequest = require('../models/recipientRequestModel');
 const DeleteLog = require('../models/deleteLogModel');
 const generateToken = require('../utils/generateToken');
-// 1️⃣ Register Hospital
+
+// Register Hospital
 exports.registerHospital = async (req, res) => {
   try {
     const { hospitalName, email, password, licenseNumber, address } = req.body;
@@ -16,12 +17,12 @@ exports.registerHospital = async (req, res) => {
     const hospital = await Hospital.create({ hospitalName, email, password, licenseNumber, address });
     const token = generateToken(hospital._id);
 
-    // ✅ Set JWT as cookie
+    // Set JWT as cookie
     res.cookie('token', token, {
-      httpOnly: true,                        // Prevent JS access (secure)
-      secure: process.env.NODE_ENV === 'production', // true only in HTTPS
-      sameSite: 'strict',                    // CSRF protection
-      maxAge: 30 * 24 * 60 * 60 * 1000       // 30 days
+      httpOnly: true,                       
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: 'strict',                 
+      maxAge: 30 * 24 * 60 * 60 * 1000  
     });
 
     res.status(201).json({
@@ -37,7 +38,7 @@ exports.registerHospital = async (req, res) => {
   }
 };
 
-// 2️⃣ Login Hospital
+// Login Hospital
 exports.loginHospital = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -46,7 +47,7 @@ exports.loginHospital = async (req, res) => {
     if (hospital && (await hospital.matchPassword(password))) {
       const token = generateToken(hospital._id);
 
-      // ✅ Set cookie
+      // Set cookie
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -71,14 +72,14 @@ exports.loginHospital = async (req, res) => {
 };
 
 
-// 3️⃣ View Profile
+// View Profile
 exports.getProfile = async (req, res) => {
   const hospital = await Hospital.findById(req.hospital._id).select('-password');
   if (hospital) res.json(hospital);
   else res.status(404).json({ message: 'Hospital not found' });
 };
 
-// 4️⃣ Update Profile
+// Update Profile
 exports.updateProfile = async (req, res) => {
   const hospital = await Hospital.findById(req.hospital._id);
   if (hospital) {
@@ -91,7 +92,7 @@ exports.updateProfile = async (req, res) => {
   } else res.status(404).json({ message: 'Hospital not found' });
 };
 
-// 5️⃣ Add Blood Stock
+// Add Blood Stock
 exports.addBloodStock = async (req, res) => {
   try {
     const { bloodGroup, units, expiryDate } = req.body;
@@ -107,7 +108,7 @@ exports.addBloodStock = async (req, res) => {
   }
 };
 
-// 6️⃣ View All Blood Stock
+// View All Blood Stock
 exports.getBloodStock = async (req, res) => {
   try {
     const stock = await BloodStock.find({ hospital: req.hospital._id });
@@ -117,7 +118,7 @@ exports.getBloodStock = async (req, res) => {
   }
 };
 
-// 7️⃣ Update Blood Stock
+// Update Blood Stock
 exports.updateBloodStock = async (req, res) => {
   try {
     const stock = await BloodStock.findById(req.params.id);
@@ -131,7 +132,7 @@ exports.updateBloodStock = async (req, res) => {
   }
 };
 
-// 8️⃣ Delete Blood Stock (Soft Delete)
+// Delete Blood Stock (Soft Delete)
 exports.deleteBloodStock = async (req, res) => {
   try {
     const stock = await BloodStock.findById(req.params.id);
@@ -146,7 +147,7 @@ exports.deleteBloodStock = async (req, res) => {
   }
 };
 
-// 9️⃣ View Donor Appointments
+// View Donor Appointments
 exports.getAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ hospitalName: req.hospital.hospitalName });
@@ -156,7 +157,7 @@ exports.getAppointments = async (req, res) => {
   }
 };
 
-// 🔟 Approve or Reject Appointment
+//Approve or Reject Appointment
 exports.updateAppointmentStatus = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
@@ -170,7 +171,7 @@ exports.updateAppointmentStatus = async (req, res) => {
   }
 };
 
-// 11️⃣ View Recipient Requests
+//  View Recipient Requests
 exports.getRecipientRequests = async (req, res) => {
   try {
     const requests = await RecipientRequest.find({ hospital: req.hospital._id });
@@ -180,7 +181,7 @@ exports.getRecipientRequests = async (req, res) => {
   }
 };
 
-// 12️⃣ Update Recipient Request Status
+//  Update Recipient Request Status
 exports.updateRequestStatus = async (req, res) => {
   try {
     const request = await RecipientRequest.findById(req.params.id);
@@ -195,7 +196,7 @@ exports.updateRequestStatus = async (req, res) => {
 };
 
 
-// 13️⃣ Logout Hospital
+//  Logout Hospital
 exports.logoutHospital = async (req, res) => {
   try {
     // Clear cookie if you're storing JWT in cookies
