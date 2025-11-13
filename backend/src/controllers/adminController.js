@@ -8,7 +8,7 @@ const RecipientRequest = require('../models/recipientRequestModel');
 const Appointment = require('../models/appointmentModel');
 const generateToken = require('../utils/generateToken');
 
-// 1️⃣ Register Admin (Super Admin only)
+// Register Admin (Super Admin only)
 exports.registerAdmin = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,7 +29,7 @@ exports.registerAdmin = async (req, res) => {
   }
 };
 
-// 2️⃣ Login Admin
+// Login Admin
 exports.loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -62,7 +62,7 @@ exports.loginAdmin = async (req, res) => {
 };
 
 
-// 3️⃣ Get Admin Profile
+//  Get Admin Profile
 exports.getAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin._id).select('-password');
@@ -74,7 +74,7 @@ exports.getAdminProfile = async (req, res) => {
   }
 };
 
-// 4️⃣ Update Admin Profile (optional)
+//  Update Admin Profile
 exports.updateAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin._id);
@@ -94,7 +94,7 @@ exports.updateAdminProfile = async (req, res) => {
 
 
 
-// 3️⃣ Admin Dashboard Overview
+//  Admin Dashboard Overview
 exports.getDashboard = async (req, res) => {
   try {
     const donors = await Donor.countDocuments();
@@ -118,7 +118,7 @@ exports.getDashboard = async (req, res) => {
   }
 };
 
-// 4️⃣ View All Users
+// View All Users
 exports.getAllUsers = async (req, res) => {
   try {
     const donors = await Donor.find().select('-password');
@@ -136,7 +136,40 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// 5️⃣ Manage Blood Inventory (View All Stocks)
+//Update user details by type (Donor, Hospital, Recipient)
+exports.updateUser = async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const updateData = req.body;
+    let updatedUser;
+
+    if (type === 'donor') {
+      updatedUser = await Donor.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+    } else if (type === 'hospital') {
+      updatedUser = await Hospital.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+    } else if (type === 'recipient') {
+      updatedUser = await Recipient.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid user type' });
+    }
+
+    if (!updatedUser) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({
+      success: true,
+      message: `${type} updated successfully`,
+      data: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+
+// Manage Blood Inventory (View All Stocks)
 exports.getAllBloodStock = async (req, res) => {
   try {
     const stocks = await BloodStock.find().populate('hospital', 'hospitalName');
@@ -146,7 +179,27 @@ exports.getAllBloodStock = async (req, res) => {
   }
 };
 
-// 6️⃣ Manage Requests (All recipient blood requests)
+
+// Update Blood Stock Record
+exports.updateBloodStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const stock = await BloodStock.findByIdAndUpdate(id, req.body, { new: true });
+
+    if (!stock) return res.status(404).json({ success: false, message: 'Blood stock not found' });
+
+    res.json({
+      success: true,
+      message: 'Blood stock updated successfully',
+      data: stock
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+//  Manage Requests (All recipient blood requests)
 exports.getAllRequests = async (req, res) => {
   try {
     const requests = await RecipientRequest.find()
@@ -158,7 +211,26 @@ exports.getAllRequests = async (req, res) => {
   }
 };
 
-// 7️⃣ Delete User (Soft Delete)
+// Update Appointment Details
+exports.updateAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findByIdAndUpdate(id, req.body, { new: true });
+
+    if (!appointment) return res.status(404).json({ success: false, message: 'Appointment not found' });
+
+    res.json({
+      success: true,
+      message: 'Appointment updated successfully',
+      data: appointment
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// Delete User (Soft Delete)
 exports.deleteUser = async (req, res) => {
   try {
     const { type, id } = req.params;
@@ -177,7 +249,7 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// 8️⃣ View Delete Logs
+// View Delete Logs
 exports.getDeleteLogs = async (req, res) => {
   try {
     const logs = await DeleteLog.find().sort({ deletedAt: -1 });
@@ -187,7 +259,7 @@ exports.getDeleteLogs = async (req, res) => {
   }
 };
 
-// 9️⃣ Restore from Delete Logs
+// Restore from Delete Logs
 exports.restoreFromDeleteLogs = async (req, res) => {
   try {
     const log = await DeleteLog.findById(req.params.id);
@@ -206,7 +278,7 @@ exports.restoreFromDeleteLogs = async (req, res) => {
   }
 };
 
-// 🔟 Logout
+//Logout
 exports.logoutAdmin = async (req, res) => {
   try {
     res.clearCookie('token', {

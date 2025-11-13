@@ -2,7 +2,7 @@ const Recipient = require('../models/recipientModel');
 const RecipientRequest = require('../models/recipientRequestModel');
 const generateToken = require('../utils/generateToken');
 
-// 1️⃣ Register Recipient
+// Register Recipient
 exports.registerRecipient = async (req, res) => {
   try {
     const { name, email, password, bloodGroup, age, medicalCondition } = req.body;
@@ -33,7 +33,7 @@ exports.registerRecipient = async (req, res) => {
   }
 };
 
-// 2️⃣ Login Recipient
+// Login Recipient
 exports.loginRecipient = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -65,7 +65,7 @@ exports.loginRecipient = async (req, res) => {
   }
 };
 
-// 3️⃣ Get Profile
+// Get Profile
 exports.getProfile = async (req, res) => {
   try {
     const recipient = await Recipient.findById(req.recipient._id).select('-password');
@@ -75,7 +75,7 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// 4️⃣ Update Profile
+//  Update Profile
 exports.updateProfile = async (req, res) => {
   try {
     const recipient = await Recipient.findById(req.recipient._id);
@@ -92,7 +92,7 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// 5️⃣ Create Blood Request
+// Create Blood Request
 exports.createRequest = async (req, res) => {
   try {
     const { hospital, bloodGroup, quantity, requestType, emergencyReason } = req.body;
@@ -110,7 +110,7 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// 6️⃣ View All Requests
+// View All Requests
 exports.getRequests = async (req, res) => {
   try {
     const requests = await RecipientRequest.find({ recipient: req.recipient._id }).populate('hospital', 'hospitalName');
@@ -120,7 +120,7 @@ exports.getRequests = async (req, res) => {
   }
 };
 
-// 7️⃣ Delete Request (Soft Delete)
+//  Delete Request (Soft Delete)
 exports.deleteRequest = async (req, res) => {
   try {
     const request = await RecipientRequest.findOne({ _id: req.params.id, recipient: req.recipient._id });
@@ -133,7 +133,7 @@ exports.deleteRequest = async (req, res) => {
   }
 };
 
-// 8️⃣ Logout
+// Logout
 exports.logoutRecipient = async (req, res) => {
   try {
     res.clearCookie('token', {

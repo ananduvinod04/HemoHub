@@ -9,6 +9,9 @@ const {
   getAllUsers,
   getAllBloodStock,
   getAllRequests,
+   updateUser,
+  updateBloodStock,
+  updateAppointment,
   deleteUser,
   getDeleteLogs,
   restoreFromDeleteLogs,
@@ -34,5 +37,14 @@ router.get('/requests', protectAdmin, getAllRequests);
 router.delete('/delete/:type/:id', protectAdmin, deleteUser);
 router.get('/deletelogs', protectAdmin, getDeleteLogs);
 router.put('/deletelogs/:id/restore', protectAdmin, restoreFromDeleteLogs);
+
+router.put('/update/:type/:id', protectAdmin, updateUser); // update donor, hospital, recipient
+
+
+router.put('/stock/:id', protectAdmin, updateBloodStock); // edit blood stock details
+
+
+router.put('/appointment/:id', protectAdmin, updateAppointment); // edit appointment (approve, cancel, reschedule)
+
 
 module.exports = router;
