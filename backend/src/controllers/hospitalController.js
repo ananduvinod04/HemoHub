@@ -4,7 +4,10 @@ const Appointment = require('../models/appointmentModel');
 const RecipientRequest = require('../models/recipientRequestModel');
 const DeleteLog = require('../models/deleteLogModel');
 const generateToken = require('../utils/generateToken');
+<<<<<<< HEAD
 
+=======
+>>>>>>> admin
 // Register Hospital
 exports.registerHospital = async (req, res) => {
   try {
@@ -20,9 +23,15 @@ exports.registerHospital = async (req, res) => {
     // Set JWT as cookie
     res.cookie('token', token, {
       httpOnly: true,                       
+<<<<<<< HEAD
       secure: process.env.NODE_ENV === 'production', 
       sameSite: 'strict',                 
       maxAge: 30 * 24 * 60 * 60 * 1000  
+=======
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',                   
+      maxAge: 30 * 24 * 60 * 60 * 1000       
+>>>>>>> admin
     });
 
     res.status(201).json({
@@ -47,7 +56,11 @@ exports.loginHospital = async (req, res) => {
     if (hospital && (await hospital.matchPassword(password))) {
       const token = generateToken(hospital._id);
 
+<<<<<<< HEAD
       // Set cookie
+=======
+      //Set cookie
+>>>>>>> admin
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -72,14 +85,22 @@ exports.loginHospital = async (req, res) => {
 };
 
 
+<<<<<<< HEAD
 // View Profile
+=======
+//  View Profile
+>>>>>>> admin
 exports.getProfile = async (req, res) => {
   const hospital = await Hospital.findById(req.hospital._id).select('-password');
   if (hospital) res.json(hospital);
   else res.status(404).json({ message: 'Hospital not found' });
 };
 
+<<<<<<< HEAD
 // Update Profile
+=======
+//  Update Profile
+>>>>>>> admin
 exports.updateProfile = async (req, res) => {
   const hospital = await Hospital.findById(req.hospital._id);
   if (hospital) {
@@ -147,7 +168,11 @@ exports.deleteBloodStock = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // View Donor Appointments
+=======
+//  View Donor Appointments
+>>>>>>> admin
 exports.getAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ hospitalName: req.hospital.hospitalName });
@@ -157,7 +182,11 @@ exports.getAppointments = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //Approve or Reject Appointment
+=======
+// Approve or Reject Appointment
+>>>>>>> admin
 exports.updateAppointmentStatus = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
@@ -171,7 +200,11 @@ exports.updateAppointmentStatus = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //  View Recipient Requests
+=======
+// View Recipient Requests
+>>>>>>> admin
 exports.getRecipientRequests = async (req, res) => {
   try {
     const requests = await RecipientRequest.find({ hospital: req.hospital._id });
@@ -181,7 +214,11 @@ exports.getRecipientRequests = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 //  Update Recipient Request Status
+=======
+// Update Recipient Request Status
+>>>>>>> admin
 exports.updateRequestStatus = async (req, res) => {
   try {
     const request = await RecipientRequest.findById(req.params.id);
@@ -196,7 +233,11 @@ exports.updateRequestStatus = async (req, res) => {
 };
 
 
+<<<<<<< HEAD
 //  Logout Hospital
+=======
+// Logout Hospital
+>>>>>>> admin
 exports.logoutHospital = async (req, res) => {
   try {
     // Clear cookie if you're storing JWT in cookies

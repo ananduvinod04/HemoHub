@@ -6,6 +6,8 @@ const connectDB = require('./src/config/db');
 const donorRoutes = require('./src/routes/donorRoutes');
 const hospitalRoutes = require('./src/routes/hospitalRoutes');
 const recipientRoutes = require('./src/routes/recipientRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
+
 
 const errorHandler = require('./src/middlewares/errorMiddleware');
 
@@ -33,6 +35,8 @@ app.get("/", (req, res) => {
 app.use('/api/donor', donorRoutes);
 app.use('/api/hospital', hospitalRoutes);
 app.use('/api/recipient', recipientRoutes);
+app.use('/api/admin', adminRoutes);
+
   
 
 
