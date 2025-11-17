@@ -11,6 +11,7 @@ const {
   getDashboard,
   deleteDonor,
 } = require('../controllers/donorController');
+const{getHospitalList}=require('../controllers/hospitalController');
 const { protect } = require('../middlewares/authMiddleware');
 
 router.post('/register', registerDonor);
@@ -28,5 +29,6 @@ router.post('/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+router.get('/hospitals', protect, getHospitalList);
 
 module.exports = router;
