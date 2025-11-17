@@ -14,8 +14,9 @@ const {
   getRecipientRequests,
   updateRequestStatus,
   logoutHospital
+  
 } = require('../controllers/hospitalController');
-const { protectHospital } = require('../middlewares/authMiddleware');
+const { protectHospital} = require('../middlewares/authMiddleware');
 
 // Authentication
 router.post('/register', registerHospital);
@@ -39,6 +40,7 @@ router.put('/appointments/:id/status', protectHospital, updateAppointmentStatus)
 router.get('/requests', protectHospital, getRecipientRequests);
 router.put('/requests/:id/status', protectHospital, updateRequestStatus);
 router.post('/logout', logoutHospital);
+
 
 
 module.exports = router;

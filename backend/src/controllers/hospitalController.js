@@ -211,3 +211,36 @@ exports.logoutHospital = async (req, res) => {
     res.status(500).json({ success: false, message: 'Logout failed', error: error.message });
   }
 };
+
+//debugging purpose
+
+// View All Blood Stock (For Recipient Users)
+exports.getAllBloodStockForRecipients = async (req, res) => {
+  try {
+    const stock = await BloodStock.find()
+      .populate({
+        path: "hospital",
+        select: "hospitalName address"
+      });
+
+    res.json(stock);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+//debugging purpose
+
+//all hospital list for recepient and donor for front end dropdowns
+exports.getHospitalList = async (req, res) => {
+  try {
+    // Fetch relevant fields only (e.g., name & _id, maybe address/city)
+    const hospitals = await Hospital.find({}, '_id hospitalName address'); 
+    res.json(hospitals);
+  } catch (error) {
+    console.error('Error fetching hospital list:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
