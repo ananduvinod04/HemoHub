@@ -65,11 +65,7 @@ exports.loginRecipient = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 //  Get Profile
-=======
-// Get Profile
->>>>>>> admin
 exports.getProfile = async (req, res) => {
   try {
     const recipient = await Recipient.findById(req.recipient._id).select('-password');
@@ -79,11 +75,7 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 // Update Profile
-=======
-//  Update Profile
->>>>>>> admin
 exports.updateProfile = async (req, res) => {
   try {
     const recipient = await Recipient.findById(req.recipient._id);
@@ -128,11 +120,7 @@ exports.getRequests = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 // Delete Request (Soft Delete)
-=======
-//  Delete Request (Soft Delete)
->>>>>>> admin
 exports.deleteRequest = async (req, res) => {
   try {
     const request = await RecipientRequest.findOne({ _id: req.params.id, recipient: req.recipient._id });

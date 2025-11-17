@@ -51,6 +51,7 @@ exports.loginDonor = async (req, res) => {
       });
 
       res.json({
+        message:"login sucessfull",
         _id: donor._id,
         name: donor.name,
         email: donor.email,
