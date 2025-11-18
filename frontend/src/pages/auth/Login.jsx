@@ -18,6 +18,10 @@ export default function Login() {
     const res = await login(role, { email, password });
 
     if (res.success) navigate("/");
+    if (res.success){
+     console.log(res);
+    }
+   
     else setError(res.message);
   };
 

@@ -1,26 +1,38 @@
 import { create } from "zustand";
-import Cookies from "js-cookie";
 import api from "../api/axiosInstance";
 
 export const useAuthStore = create((set) => ({
   user: null,
   role: null,
-  token: Cookies.get("token") || null,
 
   login: async (role, credentials) => {
     try {
-      const res = await api.post(`/${role}/login`, credentials);
-      const data = res.data;
-
-      Cookies.set("token", data.token);
-
-      set({
-        user: { _id: data._id, name: data.name || data.hospitalName },
-        role,
-        token: data.token,
+      const res = await api.post(`/${role}/login`, credentials, {
+        withCredentials: true,
       });
 
-      return { success: true };
+      const data = res.data;
+
+      const userData = {
+        _id: data._id,
+        name: data.name || data.hospitalName,
+        email: data.email,
+      };
+
+      // Store in Zustand
+      set({
+        user: userData,
+        role,
+      });
+
+      // Return full data to Login.jsx
+      return {
+        success: true,
+        user: userData,
+        role,
+        raw: data,
+      };
+
     } catch (err) {
       return {
         success: false,
@@ -29,8 +41,13 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-  logout: () => {
-    Cookies.remove("token");
-    set({ user: null, role: null, token: null });
+  logout: async (role) => {
+    try {
+      await api.post(`/${role}/logout`, {}, { withCredentials: true });
+
+      set({ user: null, role: null });
+    } catch (error) {
+      console.log("Logout error:", error);
+    }
   },
 }));
