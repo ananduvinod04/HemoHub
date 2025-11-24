@@ -7,6 +7,15 @@ import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import "./index.css";
 
+import DonorLayout from "./pages/donor/DonorLayout";
+
+import ProtectedRoute from "./pages/auth/ProtectedRoute";
+import DonorDashboard from "./pages/donor/DonorDashboard";
+import DonorProfile from "./pages/donor/DonorProfile";
+import DonorBookAppointment from "./pages/donor/DonorBookAppointment";
+import DonorAppointmentHistory from "./pages/donor/DonorAppointmentHistory";
+
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -17,6 +26,27 @@ const router = createBrowserRouter([
       { path: "signup", element: <Signup /> },
     ],
   },
+    {
+  path: "/donor",
+  element: <ProtectedRoute />,
+  children: [
+    {
+      path: "",
+      element: <DonorLayout />,
+      children: [
+        { index: true, element: <DonorDashboard /> }, 
+        { path: "dashboard", element: <DonorDashboard /> },
+        { path: "profile", element: <DonorProfile /> },
+        { path: "book-appointment", element: <DonorBookAppointment /> },
+        { path: "appointments", element: <DonorAppointmentHistory /> },
+      
+      ]
+    }
+  ]
+}
+
+,
+
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(

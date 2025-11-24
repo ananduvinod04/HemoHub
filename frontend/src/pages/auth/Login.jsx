@@ -17,7 +17,7 @@ export default function Login() {
 
     const res = await login(role, { email, password });
 
-    if (res.success) navigate("/");
+    if (res.success) navigate(`/${role}`);//redirect to role dashboard
     if (res.success){
      console.log(res);
     }
