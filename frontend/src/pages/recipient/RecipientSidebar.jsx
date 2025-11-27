@@ -1,14 +1,15 @@
-import { 
-  Home, 
-  User, 
-  CalendarCheck, 
-  ListOrdered, 
+// src/pages/recipient/RecipientSidebar.jsx
+import {
+  Home,
+  User,
   PlusCircle,
-  LogOut 
+  ListOrdered,
+  Database,
+  LogOut
 } from "lucide-react";
 
 import { NavLink, useNavigate } from "react-router-dom";
-import { useAuthStore } from "@/store/authStore";  // adjust path if needed
+import { useAuthStore } from "@/store/authStore";
 
 import {
   Sidebar,
@@ -21,22 +22,21 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const donorMenu = [
-  { title: "Dashboard", url: "/donor/dashboard", icon: Home },
-  { title: "Profile", url: "/donor/profile", icon: User },
-  { title: "Book Appointment", url: "/donor/book-appointment", icon: PlusCircle },
-  { title: "Appointment History", url: "/donor/appointments", icon: ListOrdered },
-
+const menu = [
+  { title: "Dashboard", url: "/recipient/dashboard", icon: Home },
+  { title: "Profile", url: "/recipient/profile", icon: User },
+  { title: "Request Blood", url: "/recipient/request-blood", icon: PlusCircle },
+  { title: "My Requests", url: "/recipient/requests", icon: ListOrdered },
+  { title: "Blood Stock", url: "/recipient/blood-stock", icon: Database },
 ];
 
-export function DonorSidebar() {
-  const logout = useAuthStore((state) => state.logout); 
-  const role = useAuthStore((state) => state.role);
+export function RecipientSidebar() {
+  const { logout, role } = useAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout(role);          // calls /donors/logout
-    navigate("/");          // redirect to login page
+    await logout(role);
+    navigate("/");
   };
 
   return (
@@ -44,25 +44,19 @@ export function DonorSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-lg font-semibold text-white">
-            Donor Panel
+            Recipient Panel
           </SidebarGroupLabel>
 
           <SidebarGroupContent>
             <SidebarMenu>
-              
-              {/* Normal Menu Items */}
-              {donorMenu.map((item) => (
+              {menu.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-[15px]
-                         transition-all duration-200
-                         ${isActive 
-                           ? "bg-white/20 font-semibold" 
-                           : "hover:bg-white/10"
-                         }`
+                         ${isActive ? "bg-white/20 font-semibold" : "hover:bg-white/10"}`
                       }
                     >
                       <item.icon className="w-5 h-5" />
@@ -72,17 +66,15 @@ export function DonorSidebar() {
                 </SidebarMenuItem>
               ))}
 
-              {/* Logout Button */}
               <SidebarMenuItem>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[15px] hover:bg-white/10 mt-4"
+                  className="flex items-center gap-3 w-full px-3 py-2 hover:bg-white/10 rounded-lg mt-4"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
+                  Logout
                 </button>
               </SidebarMenuItem>
-
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
