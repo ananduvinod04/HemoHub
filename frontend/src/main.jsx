@@ -22,6 +22,26 @@ import RecipientCreateRequest from "./pages/recipient/RecipientCreateRequest";
 import RecipientRequests from "./pages/recipient/RecipientRequests";
 import RecipientBloodStock from "./pages/recipient/RecipientBloodStock";
 
+
+
+import HospitalLayout from "./pages/hospital/HospitalLayout";
+import HospitalDashboard from "./pages/hospital/HospitalDashboard";
+import HospitalProfile from "./pages/hospital/HospitalProfile";
+import AddBloodStock from "./pages/hospital/AddBloodStock";
+import HospitalManageStock from "./pages/hospital/HospitalManageStock";
+import HospitalAppointments from "./pages/hospital/HospitalAppointments";
+import HospitalRecipientRequests from "./pages/hospital/HospitalRecipientRequests";
+
+
+
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminManageUsers from "@/pages/admin/AdminManageUsers";
+import AdminManageBloodStock from "@/pages/admin/AdminManageBloodStock";
+import AdminManageRequests from "@/pages/admin/AdminManageRequests";
+import AdminManageAppointments from "@/pages/admin/AdminManageAppointments";
+import AdminDeleteLogs from "@/pages/admin/AdminDeleteLogs";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -76,6 +96,49 @@ const router = createBrowserRouter([
         { path: "request-blood", element: <RecipientCreateRequest /> },
         { path: "requests", element: <RecipientRequests /> },
         { path: "blood-stock", element: <RecipientBloodStock/> },
+      ],
+    },
+  ],
+}
+,
+
+
+
+{
+  path: "/hospital",
+  element: <ProtectedRoute />,
+  children: [
+    {
+      path: "",
+      element: <HospitalLayout />,
+      children: [
+        { index: true, element: <HospitalDashboard /> },
+        { path: "dashboard", element: <HospitalDashboard/> },
+        { path: "profile", element: <HospitalProfile /> },
+        { path: "add-stock", element: <AddBloodStock /> },
+        { path: "manage-stock", element: <HospitalManageStock /> },
+        { path: "appointments", element: <HospitalAppointments /> },
+        { path: "requests", element: <HospitalRecipientRequests/> },
+      ],
+    },
+  ],
+},
+
+{
+  path: "/admin",
+  element: <ProtectedRoute />,
+  children: [
+    {
+      path: "",
+      element: <AdminLayout />,
+      children: [
+        { index: true, element: <AdminDashboard /> },
+        { path: "dashboard", element: <AdminDashboard /> },
+        { path: "users", element: <AdminManageUsers /> },
+        { path: "stocks", element: <AdminManageBloodStock /> },
+        { path: "requests", element: <AdminManageRequests /> },
+        { path: "appointments", element: <AdminManageAppointments /> },
+        { path: "delete-logs", element: <AdminDeleteLogs /> },
       ],
     },
   ],
