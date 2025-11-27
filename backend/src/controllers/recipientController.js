@@ -133,6 +133,42 @@ exports.deleteRequest = async (req, res) => {
   }
 };
 
+
+// Recipient Dashboard Overview//Test by devoloper
+exports.getDashboard = async (req, res) => {
+  try {
+    const recipientId = req.recipient._id;
+
+    // Count total requests by this recipient
+    const totalRequests = await RecipientRequest.countDocuments({
+      recipient: recipientId,
+    });
+
+    // Get last 5 requests
+    const recentRequests = await RecipientRequest.find({
+      recipient: recipientId,
+    })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("hospital", "hospitalName");
+
+    res.json({
+      success: true,
+      data: {
+        totalRequests,
+        recentRequests,
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
+
 // Logout
 exports.logoutRecipient = async (req, res) => {
   try {

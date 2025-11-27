@@ -8,7 +8,8 @@ const {
   createRequest,
   getRequests,
   deleteRequest,
-  logoutRecipient
+  logoutRecipient,
+  getDashboard
 } = require('../controllers/recipientController');
 const { getAllBloodStockForRecipients,getHospitalList } = require("../controllers/hospitalController");
 
@@ -32,6 +33,9 @@ router.post('/logout', logoutRecipient);
 //DEBUGGING PURPOSE - Get all blood stock for recipients
 router.get("/all-blood-stock", protectRecipient, getAllBloodStockForRecipients);
 router.get('/hospitals', protectRecipient, getHospitalList);
+
+router.get('/dashboard', protectRecipient, getDashboard);//test devop
+
 
 
 module.exports = router;
