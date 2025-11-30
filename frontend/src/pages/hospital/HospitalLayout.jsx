@@ -11,12 +11,10 @@ export default function HospitalLayout() {
       <HospitalSidebar />
 
       <SidebarInset className="flex flex-col w-full min-h-screen">
-        <div className="p-2">
-          <SidebarTrigger />
-        </div>
+       
 
         <NameBar />
-
+      
         <div className="flex-1 p-4">
           <Outlet />
         </div>

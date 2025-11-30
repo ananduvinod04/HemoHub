@@ -6,7 +6,8 @@ import Welcome from "./pages/Welcome";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import "./index.css";
-
+import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider"
 import DonorLayout from "./pages/donor/DonorLayout";
 
 import ProtectedRoute from "./pages/auth/ProtectedRoute";
@@ -151,5 +152,11 @@ const router = createBrowserRouter([
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
+  <>
+     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
   <RouterProvider router={router} />
+  </ThemeProvider>
+     <Toaster richColors position="top-center" />
+  </>
+  
 );

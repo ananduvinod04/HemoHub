@@ -7,6 +7,8 @@ import NameBar from "@/components/common/NameBar";
 
 
 
+
+
 export default function DonorLayout() {
   return (
     <SidebarProvider>
@@ -20,10 +22,7 @@ export default function DonorLayout() {
         {/* Page content */}
         <div className="flex-1 px-4 py-2">
           <NameBar />
-           <div className="p-2">
-          <SidebarTrigger />
-        </div>
-
+        
           <Outlet />
         </div>
 

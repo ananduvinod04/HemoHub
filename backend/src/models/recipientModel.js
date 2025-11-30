@@ -7,7 +7,7 @@ const recipientSchema = new mongoose.Schema({
   password: { type: String, required: true },
   bloodGroup: { type: String, required: true },
   age: { type: Number, required: true },
-  medicalCondition: { type: String },
+  medicalCondition: { type: String ,required:true},
   createdAt: { type: Date, default: Date.now }
 });
 

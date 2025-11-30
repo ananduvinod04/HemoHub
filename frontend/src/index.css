@@ -120,3 +120,19 @@ Logoutr-primary: var(--sidebar-primary);
     @apply bg-background text-foreground;
   }
 }
+
+
+/* Remove the vertical red line from the sidebar (dark mode only) */
+.dark [data-slot="sidebar-container"],
+.dark [data-slot="sidebar-gap"],
+.dark [data-side="left"],
+.dark [data-side="right"] {
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Remove ANY border ShadCN might add */
+.dark [data-slot="sidebar-inner"],
+.dark [data-sidebar="sidebar"] {
+  border: none !important;
+}

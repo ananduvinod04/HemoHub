@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export default function DonorProfile() {
   const [profile, setProfile] = useState({
@@ -16,7 +17,7 @@ export default function DonorProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Fetch profile from backend
+  // Fetch profile
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -24,6 +25,7 @@ export default function DonorProfile() {
         setProfile(res.data);
       } catch (error) {
         console.log("Profile Fetch Error:", error);
+        toast.error("Failed to load profile");
       } finally {
         setLoading(false);
       }
@@ -31,16 +33,21 @@ export default function DonorProfile() {
     fetchProfile();
   }, []);
 
-  // Handle form submission
+  // Submit handler
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
     try {
       await api.put("/donor/profile", profile);
-      alert("Profile updated successfully!");
+
+      //  SUCCESS TOAST
+      toast.success("Profile updated successfully!");
+
     } catch (error) {
       console.log("Update Error:", error);
-      alert("Failed to update profile.");
+
+      //  ERROR TOAST
+      toast.error("Failed to update profile.");
     } finally {
       setSaving(false);
     }
@@ -56,6 +63,7 @@ export default function DonorProfile() {
 
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit}>
+          
           {/* Name */}
           <div>
             <Label>Name</Label>
@@ -91,15 +99,23 @@ export default function DonorProfile() {
             />
           </div>
 
-          {/* Blood Group */}
+          {/* Blood Group – DROPDOWN */}
           <div>
             <Label>Blood Group</Label>
-            <Input
+            <select
+              className="border p-2 rounded w-full"
               value={profile.bloodGroup}
               onChange={(e) =>
                 setProfile({ ...profile, bloodGroup: e.target.value })
               }
-            />
+            >
+              <option value="">Select Blood Group</option>
+              {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bg) => (
+                <option key={bg} value={bg}>
+                  {bg}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Submit */}
