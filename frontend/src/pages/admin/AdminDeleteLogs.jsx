@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import Loader from "@/components/common/Loader";
 
 export default function AdminDeleteLogs() {
   const [logs, setLogs] = useState([]);
@@ -41,7 +42,7 @@ export default function AdminDeleteLogs() {
     }
   }
 
-  if (loading) return <p>Loading delete logs...</p>;
+  if (loading) return <Loader className="h-12 w-12" />;
 
   return (
     <div>

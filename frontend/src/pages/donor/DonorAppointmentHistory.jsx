@@ -10,6 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import Loader from "@/components/common/Loader";
+
 
 export default function DonorAppointmentHistory() {
   const [history, setHistory] = useState([]);
@@ -30,7 +32,7 @@ export default function DonorAppointmentHistory() {
     fetchHistory();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loader size={64} className="mt-20" />;
 
   return (
     <div className="w-full">

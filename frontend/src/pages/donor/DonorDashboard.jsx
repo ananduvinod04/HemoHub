@@ -3,6 +3,7 @@ import api from "@/api/axiosInstance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import HistoryTable from "./DonationHistoryTable";
 import { useAuthStore } from "@/store/authStore";   // 👈 added
+import Loader from "@/components/common/Loader";   // 👈 added
 
 export default function DonorDashboard() {
   const [dashboard, setDashboard] = useState(null);
@@ -26,7 +27,7 @@ export default function DonorDashboard() {
     loadData();
   }, []);
 
-  if (!dashboard) return <p>Loading...</p>;
+  if (!dashboard) return <Loader size={64} className="mt-20" />;
 
   const { totalAppointments, eligibilityStatus, lastDonationDate } = dashboard;
 

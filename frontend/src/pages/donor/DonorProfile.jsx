@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import Loader from "@/components/common/Loader";
+
 
 export default function DonorProfile() {
   const [profile, setProfile] = useState({
@@ -53,7 +55,7 @@ export default function DonorProfile() {
     }
   }
 
-  if (loading) return <p>Loading profile...</p>;
+  if (loading) return <Loader size={64} className="mt-20" />;
 
   return (
     <Card className="max-w-xl border shadow-sm">

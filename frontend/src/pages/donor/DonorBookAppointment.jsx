@@ -11,6 +11,7 @@ import {
   SelectContent,
   SelectItem
 } from "@/components/ui/select";
+import Loader from "@/components/common/Loader";
 
 export default function DonorBookAppointment() {
   const [hospitals, setHospitals] = useState([]);
@@ -55,7 +56,7 @@ export default function DonorBookAppointment() {
     }
   }
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loader/>;
 
   return (
     <div className="w-full flex justify-center">
