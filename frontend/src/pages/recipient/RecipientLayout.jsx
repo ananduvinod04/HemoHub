@@ -11,9 +11,7 @@ export default function RecipientLayout() {
       <RecipientSidebar />
 
       <SidebarInset className="flex flex-col w-full min-h-screen">
-        <div className="p-2">
-          <SidebarTrigger />
-        </div>
+        
 
         <NameBar />
 

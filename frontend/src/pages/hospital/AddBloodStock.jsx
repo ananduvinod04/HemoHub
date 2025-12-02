@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "@/api/axiosInstance";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,25 +12,50 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+import Loader from "@/components/common/Loader";
+import BloodStockAddedSuccess from "@/components/common/BloodStockAddedSuccess";
+
 export default function AddBloodStock() {
   const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
   const [form, setForm] = useState({
     bloodGroup: "",
     units: "",
     expiryDate: "",
   });
+
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true); // 🔥 dashboard-style loading
+  const [successOpen, setSuccessOpen] = useState(false);
+
+  // ---------------- PAGE LOADING (dashboard style) ----------------
+  useEffect(() => {
+    // Simulating initial page load
+    setTimeout(() => setLoading(false), 500);
+  }, []);
+
+  // 🔥 Show dashboard-style centered loader
+  if (loading) {
+    return (
+      <div className="w-full flex justify-center items-center h-[60vh]">
+        <Loader size={70} /> {/* Same feel as dashboard */}
+      </div>
+    );
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
+
     try {
       await api.post("/hospital/stock", {
         bloodGroup: form.bloodGroup,
         units: Number(form.units),
         expiryDate: form.expiryDate,
       });
-      alert("Blood stock added!");
+
+      setSuccessOpen(true);
+
       setForm({ bloodGroup: "", units: "", expiryDate: "" });
     } catch (err) {
       console.error("Add stock error:", err);
@@ -42,58 +66,93 @@ export default function AddBloodStock() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Blood Stock</CardTitle>
+    <div className="w-full space-y-6 mt-6 md:mt-8">
+
+      {/* ---------------- HEADER ---------------- */}
+      <header className="px-4 py-5 bg-white dark:bg-gray-900 shadow-sm rounded-lg">
+        <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
+          Add Blood Stock
+        </h2>
+      </header>
+
+      {/* ---------------- FORM CARD ---------------- */}
+      <Card className="w-full border shadow-sm p-4 md:p-5">
+
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold text-red-600">
+            Update Blood Inventory
+          </CardTitle>
         </CardHeader>
 
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <Label>Blood Group</Label>
-              <Select
-                value={form.bloodGroup || undefined}
-                onValueChange={(val) => setForm({ ...form, bloodGroup: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select blood group" />
-                </SelectTrigger>
+        <CardContent className="space-y-4">
 
-                <SelectContent>
-                  {bloodGroups.map((bg) => (
-                    <SelectItem key={bg} value={bg}>
-                      {bg}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* ---------- ROW: Blood Group + Units + Expiry ---------- */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+              <div>
+                <Label className="text-sm">Blood Group</Label>
+                <Select
+                  value={form.bloodGroup || undefined}
+                  onValueChange={(val) =>
+                    setForm({ ...form, bloodGroup: val })
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bloodGroups.map((bg) => (
+                      <SelectItem key={bg} value={bg}>
+                        {bg}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-sm">Units</Label>
+                <Input
+                  type="number"
+                  className="h-9"
+                  value={form.units}
+                  onChange={(e) =>
+                    setForm({ ...form, units: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm">Expiry Date</Label>
+                <Input
+                  type="date"
+                  className="h-9"
+                  value={form.expiryDate}
+                  onChange={(e) =>
+                    setForm({ ...form, expiryDate: e.target.value })}
+                />
+              </div>
+
             </div>
 
-            <div>
-              <Label>Units</Label>
-              <Input
-                type="number"
-                value={form.units}
-                onChange={(e) => setForm({ ...form, units: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label>Expiry Date</Label>
-              <Input
-                type="date"
-                value={form.expiryDate}
-                onChange={(e) => setForm({ ...form, expiryDate: e.target.value })}
-              />
-            </div>
-
-            <Button type="submit" disabled={saving} className="w-full bg-red-600 text-white">
+            {/* ---------- SUBMIT BUTTON ---------- */}
+            <Button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-red-600 hover:bg-red-700 text-white h-10"
+            >
               {saving ? "Adding..." : "Add Stock"}
             </Button>
+
           </form>
         </CardContent>
       </Card>
+
+      {/* SUCCESS POPUP */}
+      <BloodStockAddedSuccess open={successOpen} onOpenChange={setSuccessOpen} />
+
     </div>
   );
 }

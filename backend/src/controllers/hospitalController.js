@@ -149,7 +149,11 @@ exports.deleteBloodStock = async (req, res) => {
 // View Donor Appointments
 exports.getAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find({ hospitalName: req.hospital.hospitalName });
+    const appointments = await Appointment.find({
+      hospitalName: req.hospital.hospitalName
+    })
+    .populate("donor", "name email bloodGroup age phone"); // ⭐ IMPORTANT
+
     res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -173,7 +177,12 @@ exports.updateAppointmentStatus = async (req, res) => {
 //  View Recipient Requests
 exports.getRecipientRequests = async (req, res) => {
   try {
-    const requests = await RecipientRequest.find({ hospital: req.hospital._id });
+    const requests = await RecipientRequest.find({
+      hospital: req.hospital._id
+    })
+    .populate("recipient", "name email age bloodGroup phone") // ⭐ FIX
+    .populate("hospital", "hospitalName address"); // optional, but useful
+
     res.json(requests);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -243,4 +252,3 @@ exports.getHospitalList = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
