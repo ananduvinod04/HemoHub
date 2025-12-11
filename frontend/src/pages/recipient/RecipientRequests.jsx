@@ -1,4 +1,4 @@
-// src/pages/recipient/RecipientRequests.jsx
+
 
 import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
@@ -87,12 +87,11 @@ export default function RecipientRequests() {
     <div className="w-full space-y-6">
 
       {/* ---------------- HEADER ---------------- */}
-      <header className="px-4 py-6 bg-white dark:bg-gray-900 shadow-sm rounded-lg mt-4">
-        <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
-          My Blood Requests
-        </h2>
+    <header className="py-2 text-center mt-2 mb-1">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
+        My Blood Requests
+        </h1>
       </header>
-
       {/* ---------------- SEARCH + FILTER ---------------- */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2">
 

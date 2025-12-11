@@ -1,4 +1,4 @@
-// src/pages/recipient/RecipientCreateRequest.jsx
+
 
 import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
@@ -22,14 +22,14 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-// Page Loading Animation
 import Loader from "@/components/common/Loader";
-
-// Submit Success Animation
 import RecipientRequestSuccess from "@/components/common/RecipientRequestSuccess";
+import { toast } from "sonner";
 
 export default function RecipientCreateRequest() {
   const [hospitals, setHospitals] = useState([]);
+  const [hospitalStock, setHospitalStock] = useState([]);
+
   const [loadingPage, setLoadingPage] = useState(true);
   const [successOpen, setSuccessOpen] = useState(false);
 
@@ -41,6 +41,7 @@ export default function RecipientCreateRequest() {
     emergencyReason: "",
   });
 
+  // Load hospital list
   useEffect(() => {
     async function load() {
       try {
@@ -55,8 +56,41 @@ export default function RecipientCreateRequest() {
     load();
   }, []);
 
+  // Load blood stock when a hospital is selected
+  useEffect(() => {
+    async function loadStock() {
+      if (!form.hospital) return;
+      try {
+        const res = await api.get("/recipient/all-blood-stock");
+        setHospitalStock(res.data);
+      } catch (err) {
+        console.log("Error loading stock", err);
+      }
+    }
+    loadStock();
+  }, [form.hospital]);
+
+  // Helper → find available units for selected hospital + blood group
+  function getAvailableUnits() {
+    const stockItem = hospitalStock.find(
+      (s) =>
+        s.hospital?._id === form.hospital &&
+        s.bloodGroup === form.bloodGroup
+    );
+    return stockItem ? stockItem.units : 0;
+  }
+
+  // Submit handler
   async function submit(e) {
     e.preventDefault();
+
+    const available = getAvailableUnits();
+
+    if (Number(form.quantity) > available) {
+      return toast.error(
+        `Cannot request ${form.quantity} units. Only ${available} units available.`
+      );
+    }
 
     try {
       await api.post("/recipient/request", form);
@@ -77,22 +111,22 @@ export default function RecipientCreateRequest() {
 
   if (loadingPage)
     return (
-     <div className="w-full h-screen flex items-center justify-center">
-  <Loader size={80} />
-</div>
+      <div className="w-full h-screen flex items-center justify-center">
+        <Loader size={80} />
+      </div>
     );
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-6 px-3 pb-6">
 
       {/* HEADER */}
-      <header className="px-4 py-6 bg-white dark:bg-gray-900 shadow-sm rounded-lg mt-4">
-        <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
+      <header className="py-2 text-center mt-2 mb-1">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Request Blood
-        </h2>
+        </h1>
       </header>
 
-      <div className="flex justify-center px-4">
+      <div className="flex justify-center px-2">
         <Card className="w-full max-w-3xl shadow-md border">
 
           <CardHeader>
@@ -108,13 +142,13 @@ export default function RecipientCreateRequest() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Hospital */}
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label>Select Hospital</Label>
                   <Select
                     value={form.hospital}
                     onValueChange={(v) => setForm({ ...form, hospital: v })}
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="Choose hospital" />
                     </SelectTrigger>
 
@@ -128,8 +162,8 @@ export default function RecipientCreateRequest() {
                   </Select>
                 </div>
 
-                {/* Blood Group (DROPDOWN) */}
-                <div className="space-y-1">
+                {/* Blood Group */}
+                <div className="space-y-2">
                   <Label>Blood Group</Label>
                   <Select
                     value={form.bloodGroup}
@@ -137,7 +171,7 @@ export default function RecipientCreateRequest() {
                       setForm({ ...form, bloodGroup: v })
                     }
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select blood group" />
                     </SelectTrigger>
 
@@ -158,20 +192,28 @@ export default function RecipientCreateRequest() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Quantity */}
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label>Quantity (Units)</Label>
                   <Input
-                    className="mt-1"
                     type="number"
                     value={form.quantity}
-                    onChange={(e) =>
-                      setForm({ ...form, quantity: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const qty = Number(e.target.value);
+                      const available = getAvailableUnits();
+
+                      if (qty > available) {
+                        toast.error(
+                          `Only ${available} units available.`
+                        );
+                      }
+
+                      setForm({ ...form, quantity: qty });
+                    }}
                   />
                 </div>
 
                 {/* Request Type */}
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label>Request Type</Label>
                   <Select
                     value={form.requestType}
@@ -179,7 +221,7 @@ export default function RecipientCreateRequest() {
                       setForm({ ...form, requestType: v })
                     }
                   >
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -192,10 +234,9 @@ export default function RecipientCreateRequest() {
 
               {/* Emergency Reason */}
               {form.requestType === "Emergency" && (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <Label>Emergency Reason</Label>
                   <Input
-                    className="mt-1"
                     value={form.emergencyReason}
                     onChange={(e) =>
                       setForm({ ...form, emergencyReason: e.target.value })
@@ -222,7 +263,6 @@ export default function RecipientCreateRequest() {
         open={successOpen}
         onOpenChange={setSuccessOpen}
       />
-
     </div>
   );
 }

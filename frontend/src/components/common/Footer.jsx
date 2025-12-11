@@ -27,10 +27,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom */}
-      <div className="text-center text-xs py-3 text-gray-600 dark:text-gray-300 border-t">
-        © {new Date().getFullYear()} Hemohub • Blood Donation System
-      </div>
     </footer>
   );
 }

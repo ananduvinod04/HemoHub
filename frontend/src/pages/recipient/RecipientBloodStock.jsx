@@ -1,4 +1,4 @@
-// src/pages/recipient/RecipientBloodStock.jsx
+
 
 import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
@@ -75,7 +75,7 @@ export default function RecipientBloodStock() {
     <div className="w-full space-y-6">
 
       {/* ---------------- HEADER ---------------- */}
-      <header className="px-4 py-6 bg-white dark:bg-gray-900 shadow-sm rounded-lg mt-4">
+      <header className="py-2 text-center mt-2 mb-1">
         <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
           Blood Stock Availability
         </h2>
