@@ -4,11 +4,6 @@ import Footer from "@/components/common/Footer";
 import { Outlet } from "react-router-dom";
 import NameBar from "@/components/common/NameBar";
 
-
-
-
-
-
 export default function DonorLayout() {
   return (
     <SidebarProvider>
@@ -16,20 +11,20 @@ export default function DonorLayout() {
 
       <SidebarInset className="flex flex-col w-full min-h-screen">
 
-        {/* Header / toggle button */}
-        
-
-        {/* Page content */}
-        <div className="flex-1 px-4 py-2">
+        {/* ---- STICKY HEADER ---- */}
+        <div className="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-sm">
           <NameBar />
-        
+        </div>
+
+        {/* ---- MAIN CONTENT ---- */}
+        <div className="flex-1 p-4 overflow-y-auto">
           <Outlet />
         </div>
 
-        {/* Footer */}
+        {/* ---- FOOTER ---- */}
         <Footer />
-      </SidebarInset>
 
+      </SidebarInset>
     </SidebarProvider>
   );
 }

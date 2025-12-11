@@ -14,6 +14,7 @@ import {
 import Loader from "@/components/common/Loader";
 import BookingSuccess from "@/components/common/BookingSuccess";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 export default function DonorBookAppointment() {
   const [hospitals, setHospitals] = useState([]);
@@ -28,6 +29,9 @@ export default function DonorBookAppointment() {
   const [successOpen, setSuccessOpen] = useState(false);
 
   const user = useAuthStore((state) => state.user);
+
+  // Today's date (YYYY-MM-DD)
+  const today = new Date().toISOString().split("T")[0];
 
   // Load hospitals
   useEffect(() => {
@@ -46,19 +50,31 @@ export default function DonorBookAppointment() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // ---- VALIDATION: Date Cannot Be in the Past ----
+    if (!form.date) {
+      toast.error("Please select a date!");
+      return;
+    }
+
+    if (form.date < today) {
+      toast.error("You cannot select a past date!");
+      return;
+    }
+
     setBooking(true);
 
     try {
       await api.post("/donor/appointment", form);
 
-      // OPEN SUCCESS LOTTIE
+      // OPEN LOTTIE
       setSuccessOpen(true);
 
-      // Reset form
+      // RESET FORM
       setForm({ hospitalName: "", type: "", date: "" });
     } catch (err) {
       console.log("Booking Error:", err);
-      alert("Failed to book appointment.");
+      toast.error("Failed to book appointment.");
     } finally {
       setBooking(false);
     }
@@ -67,23 +83,13 @@ export default function DonorBookAppointment() {
   if (loading) return <Loader />;
 
   return (
-    <div className="w-full space-y-8 mt-2 md:mt-6"> {/* ADDED TOP MARGIN */}
+    <div className="w-full space-y-8 mt-2 md:mt-6">
 
       {/* ---------------- Header Section ---------------- */}
-      <header className="px-4 py-8 bg-white dark:bg-gray-900 shadow-sm rounded-lg">
-        <div className="flex items-center justify-between md:flex-row flex-col md:space-y-0 space-y-2">
-
-          {/* Title */}
-          <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
-            Book Appointment
-          </h2>
-
-          {/* Username */}
-          <p className="text-lg font-semibold text-gray-700 dark:text-gray-100 md:text-right text-center w-full md:w-auto">
-            Welcome, {user?.name}
-          </p>
-
-        </div>
+      <header className="py-2 text-center mt-2 mb-1">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
+          Book Appointment
+        </h1>
       </header>
 
       {/* ---------------- Form Card ---------------- */}
@@ -100,6 +106,7 @@ export default function DonorBookAppointment() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+                {/* ------------ HOSPITAL ------------ */}
                 <div className="space-y-2">
                   <Label className="font-medium">Choose Hospital</Label>
                   <Select
@@ -121,6 +128,7 @@ export default function DonorBookAppointment() {
                   </Select>
                 </div>
 
+                {/* ------------ TYPE ------------ */}
                 <div className="space-y-2">
                   <Label className="font-medium">Appointment Type</Label>
                   <Select
@@ -137,10 +145,12 @@ export default function DonorBookAppointment() {
                   </Select>
                 </div>
 
+                {/* ------------ DATE ------------ */}
                 <div className="space-y-2">
                   <Label className="font-medium">Select Date</Label>
                   <Input
                     type="date"
+                    min={today}               // prevents selecting earlier days
                     value={form.date}
                     onChange={(e) =>
                       setForm({ ...form, date: e.target.value })
@@ -150,6 +160,7 @@ export default function DonorBookAppointment() {
 
               </div>
 
+              {/* ------------ SUBMIT BUTTON ------------ */}
               <div className="pt-2">
                 <Button
                   type="submit"
@@ -165,10 +176,7 @@ export default function DonorBookAppointment() {
       </div>
 
       {/* SUCCESS LOTTIE POPUP */}
-      <BookingSuccess
-        open={successOpen}
-        onOpenChange={setSuccessOpen}
-      />
+      <BookingSuccess open={successOpen} onOpenChange={setSuccessOpen} />
 
     </div>
   );

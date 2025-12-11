@@ -53,22 +53,15 @@ export default function DonorDashboard() {
     <div className="space-y-10 py-4">
 
       {/* ---------------- Header Section (Responsive Username) ---------------- */}
-      <header className="px-4 py-8 bg-white dark:bg-gray-900 shadow-sm rounded-lg">
+    <header className="py-2 text-center mt-2 mb-1">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
+          Donor Dashboard
+        </h1>
 
-        <div className="flex items-center justify-between md:flex-row flex-col md:space-y-0 space-y-2">
-
-          {/* Dashboard Heading */}
-          <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
-            Dashboard
-          </h2>
-
-          {/* Username → Right on desktop, below heading on mobile */}
-          <p className="text-lg font-semibold text-gray-700 dark:text-gray-100 md:text-right text-center w-full md:w-auto">
-            Welcome, {user?.name}
-          </p>
-
-        </div>
-
+        {/* Welcome Message */}
+        <p className="text-base text-gray-700 dark:text-gray-300 mt-1">
+          Welcome, <span className="font-semibold">{user?.name}</span> 👋
+        </p>
       </header>
 
       {/* ---------------- Dashboard Tiles ---------------- */}

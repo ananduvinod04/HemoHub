@@ -26,15 +26,13 @@ export default function DonorAppointmentHistory() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Local States
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // PAGE SIZE: Desktop = 12, Mobile = 6
   const itemsPerPage = window.innerWidth < 768 ? 6 : 12;
 
-  // Fetch appointment history
+  // Fetch history
   useEffect(() => {
     async function fetchHistory() {
       try {
@@ -69,19 +67,17 @@ export default function DonorAppointmentHistory() {
   const currentItems = filtered.slice(firstIndex, firstIndex + itemsPerPage);
 
   return (
-    <div className="w-full space-y-8 mt-6 md:mt-8">
+    <div className="w-full space-y-10 mt-10 md:mt-12 px-2">
 
       {/* ---------------- HEADER SECTION ---------------- */}
-      <header className="px-4 py-8 bg-white dark:bg-gray-900 shadow-sm rounded-lg">
-        <h2 className="text-3xl font-bold text-red-600 dark:text-red-400 text-center md:text-left">
+      <header className="py-4 text-center">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Appointment History
-        </h2>
+        </h1>
       </header>
 
       {/* ---------------- SEARCH + FILTER ---------------- */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
-
-        {/* Search */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <Input
           placeholder="Search by hospital or type..."
           value={search}
@@ -89,7 +85,6 @@ export default function DonorAppointmentHistory() {
           className="md:w-1/3"
         />
 
-        {/* Status Filter */}
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="md:w-48 w-full">
             <SelectValue placeholder="Filter Status" />
@@ -105,7 +100,7 @@ export default function DonorAppointmentHistory() {
       </div>
 
       {/* ---------------- TABLE (DESKTOP) ---------------- */}
-      <div className="hidden md:block px-2">
+      <div className="hidden md:block">
         <Card className="shadow-sm border">
           <CardHeader>
             <CardTitle className="text-xl font-semibold text-red-600">
@@ -113,7 +108,7 @@ export default function DonorAppointmentHistory() {
             </CardTitle>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="mt-4">
             <Table>
               <TableCaption>Complete appointment history</TableCaption>
 
@@ -150,7 +145,7 @@ export default function DonorAppointmentHistory() {
       </div>
 
       {/* ---------------- MOBILE CARDS ---------------- */}
-      <div className="md:hidden px-2 space-y-4">
+      <div className="md:hidden space-y-4">
         {currentItems.length === 0 ? (
           <p className="text-center text-gray-500">No appointments found.</p>
         ) : (
@@ -184,42 +179,45 @@ export default function DonorAppointmentHistory() {
         )}
       </div>
 
-      {/* ---------------- PAGINATION ---------------- */}
+      {/* ---------------- PAGINATION - FIXED AT BOTTOM ---------------- */}
       {filtered.length > 0 && (
-        <Pagination className="mt-4">
-          <PaginationContent>
+        <div className="flex justify-center mt-8 mb-4">
+          <Pagination>
+            <PaginationContent>
 
-            {/* Prev */}
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-
-            {/* Page Numbers */}
-            {[...Array(totalPages)].map((_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
+              {/* Prev */}
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                  className={currentPage === 1 ? "pointer-events-none opacity-40" : ""}
+                />
               </PaginationItem>
-            ))}
 
-            {/* Next */}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() =>
-                  currentPage < totalPages && setCurrentPage(currentPage + 1)
-                }
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              {/* Number buttons */}
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              {/* Next */}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    currentPage < totalPages && setCurrentPage(currentPage + 1)
+                  }
+                  className={currentPage === totalPages ? "pointer-events-none opacity-40" : ""}
+                />
+              </PaginationItem>
+
+            </PaginationContent>
+          </Pagination>
+        </div>
       )}
 
     </div>
