@@ -12,10 +12,10 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-// ⭐ Lucide Icons
+// Lucide Icons
 import { Pencil, Trash2, Save, X } from "lucide-react";
 
-// ⭐ Tooltip
+// Tooltip
 import {
   Tooltip,
   TooltipTrigger,
@@ -23,7 +23,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 
-// ⭐ AlertDialog (Delete Confirmation)
+// AlertDialog (Delete Confirmation)
 import {
   AlertDialog,
   AlertDialogTrigger,

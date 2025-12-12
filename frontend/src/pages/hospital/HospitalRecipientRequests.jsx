@@ -105,7 +105,7 @@ export default function HospitalRecipientRequests() {
       </div>
     );
 
-  // ⭐ Priority Sorting
+  // Priority Sorting
   const priority = {
     Pending: 1,
     Approved: 2,
@@ -120,7 +120,7 @@ export default function HospitalRecipientRequests() {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  // ⭐ SEARCH + FILTER LOGIC
+  // SEARCH + FILTER LOGIC
   const filtered = sorted.filter((r) => {
     const s = search.toLowerCase();
 
@@ -137,7 +137,7 @@ export default function HospitalRecipientRequests() {
     return matchSearch && matchStatus && matchType;
   });
 
-  // ⭐ Pagination
+  // Pagination
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const firstIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = filtered.slice(firstIndex, firstIndex + itemsPerPage);

@@ -17,10 +17,10 @@ import {
 import Loader from "@/components/common/Loader";
 import { toast } from "sonner";
 
-// ⭐ LUCIDE ICONS
+//  LUCIDE ICONS
 import { Check, CheckCheck, X } from "lucide-react";
 
-// ⭐ TOOLTIP
+// TOOLTIP
 import {
   Tooltip,
   TooltipTrigger,
@@ -28,7 +28,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 
-// ⭐ CANCEL CONFIRMATION DIALOG
+// CANCEL CONFIRMATION DIALOG
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -73,7 +73,7 @@ export default function HospitalAppointments() {
     load();
   }, []);
 
-  // ⭐ Update Status
+  // Update Status
   async function updateStatus(id, status) {
     try {
       await api.put(`/hospital/appointments/${id}/status`, { status });
@@ -198,7 +198,7 @@ export default function HospitalAppointments() {
                   <TableCell>{new Date(a.date).toLocaleDateString()}</TableCell>
                   <TableCell className="capitalize">{a.status}</TableCell>
 
-                  {/* ⭐ ICON ACTIONS (DESKTOP) */}
+                  {/* ICON ACTIONS (DESKTOP) */}
                   <TableCell>
                     <div className="flex items-center gap-6">
 
@@ -304,7 +304,7 @@ export default function HospitalAppointments() {
             <p><strong>Date:</strong> {new Date(a.date).toLocaleDateString()}</p>
             <p><strong>Status:</strong> <span className="capitalize">{a.status}</span></p>
 
-            {/* ⭐ ICON ACTIONS (MOBILE) */}
+            {/* ICON ACTIONS (MOBILE) */}
             <div className="flex items-center gap-8 mt-4">
 
               {/* APPROVE */}
