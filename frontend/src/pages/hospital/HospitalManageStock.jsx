@@ -1,20 +1,40 @@
 import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
+
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCaption, TableCell,
+  TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/common/Loader";
 import { Card } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
+// ⭐ Lucide Icons
+import { Pencil, Trash2, Save, X } from "lucide-react";
+
+// ⭐ Tooltip
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+
+// ⭐ AlertDialog (Delete Confirmation)
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export default function HospitalManageStock() {
   const [stock, setStock] = useState([]);
@@ -22,7 +42,8 @@ export default function HospitalManageStock() {
   const [editValues, setEditValues] = useState({ units: "", expiryDate: "" });
   const [loading, setLoading] = useState(true);
 
-  // Search + Filter states
+  const [deleteId, setDeleteId] = useState(null);
+
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
 
@@ -41,22 +62,11 @@ export default function HospitalManageStock() {
     load();
   }, []);
 
-  async function remove(id) {
-    if (!confirm("Delete this stock record?")) return;
-    try {
-      await api.delete(`/hospital/stock/${id}`);
-      load();
-    } catch (err) {
-      console.error("Delete stock error:", err);
-      alert("Failed to delete");
-    }
-  }
-
-  function startEdit(item) {
-    setEditingId(item._id);
+  function startEdit(s) {
+    setEditingId(s._id);
     setEditValues({
-      units: item.units,
-      expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : "",
+      units: s.units,
+      expiryDate: s.expiryDate ? s.expiryDate.slice(0, 10) : "",
     });
   }
 
@@ -75,7 +85,15 @@ export default function HospitalManageStock() {
       load();
     } catch (err) {
       console.error("Update stock error:", err);
-      alert("Update failed");
+    }
+  }
+
+  async function deleteStock(id) {
+    try {
+      await api.delete(`/hospital/stock/${id}`);
+      load();
+    } catch (err) {
+      console.error("Delete stock error:", err);
     }
   }
 
@@ -97,17 +115,15 @@ export default function HospitalManageStock() {
   return (
     <div className="w-full space-y-6">
 
-      {/* -------------------- HEADER -------------------- */}
-      <header className="px-4 py-6 bg-white dark:bg-gray-900 shadow-sm rounded-lg mt-4">
-        <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
+      {/* ---------------- HEADER ---------------- */}
+      <header className="py-4 text-center">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Manage Blood Stock
-        </h2>
+        </h1>
       </header>
 
-      {/* -------------------- SEARCH + FILTER -------------------- */}
+      {/* ---------------- SEARCH + FILTER ---------------- */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2">
-
-        {/* SEARCH */}
         <Input
           placeholder="Search by blood group, units, date..."
           value={search}
@@ -115,8 +131,7 @@ export default function HospitalManageStock() {
           className="md:w-1/3"
         />
 
-        {/* FILTER */}
-        <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value)}>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="md:w-48 w-full">
             <SelectValue placeholder="Filter Status" />
           </SelectTrigger>
@@ -129,7 +144,7 @@ export default function HospitalManageStock() {
         </Select>
       </div>
 
-      {/* -------------------- DESKTOP TABLE -------------------- */}
+      {/* ---------------- DESKTOP TABLE ---------------- */}
       <div className="hidden md:block px-2">
         <Table>
           <TableCaption>Your hospital blood stock details</TableCaption>
@@ -156,6 +171,7 @@ export default function HospitalManageStock() {
                 <TableRow key={s._id}>
                   <TableCell className="font-medium">{s.bloodGroup}</TableCell>
 
+                  {/* Units */}
                   <TableCell>
                     {editingId === s._id ? (
                       <Input
@@ -170,6 +186,7 @@ export default function HospitalManageStock() {
                     )}
                   </TableCell>
 
+                  {/* Expiry */}
                   <TableCell>
                     {editingId === s._id ? (
                       <Input
@@ -188,34 +205,98 @@ export default function HospitalManageStock() {
 
                   <TableCell>{s.status || "Available"}</TableCell>
 
-                  <TableCell className="space-x-2">
-                    {editingId === s._id ? (
-                      <>
-                        <Button
-                          size="sm"
-                          onClick={() => saveEdit(s._id)}
-                          className="bg-green-600 text-white"
-                        >
-                          Save
-                        </Button>
-                        <Button size="sm" onClick={cancelEdit}>
-                          Cancel
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button size="sm" onClick={() => startEdit(s)}>
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => remove(s._id)}
-                          className="bg-red-600 text-white"
-                        >
-                          Delete
-                        </Button>
-                      </>
-                    )}
+                  {/* ACTION ICONS WITH TOOLTIP */}
+                  <TableCell>
+                    <div className="flex items-center gap-6">
+
+                      {/* Save Icon */}
+                      {editingId === s._id && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Save
+                                size={22}
+                                className="text-green-600 cursor-pointer hover:scale-125 transition"
+                                onClick={() => saveEdit(s._id)}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>Save Changes</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      {/* Cancel Edit */}
+                      {editingId === s._id && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <X
+                                size={22}
+                                className="text-gray-500 cursor-pointer hover:scale-125 transition"
+                                onClick={cancelEdit}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>Cancel Edit</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      {/* Edit Icon */}
+                      {editingId !== s._id && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Pencil
+                                size={22}
+                                className="text-blue-600 cursor-pointer hover:scale-125 transition"
+                                onClick={() => startEdit(s)}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>Edit Stock</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+
+                      {/* Delete Icon */}
+                      {editingId !== s._id && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Trash2
+                                    size={22}
+                                    className="text-red-600 cursor-pointer hover:scale-125 transition"
+                                    onClick={() => setDeleteId(s._id)}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>Delete Record</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </AlertDialogTrigger>
+
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this stock record?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. The record will be permanently removed.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>No</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-600 text-white hover:bg-red-700"
+                                onClick={() => deleteStock(deleteId)}
+                              >
+                                Yes, Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -224,7 +305,7 @@ export default function HospitalManageStock() {
         </Table>
       </div>
 
-      {/* -------------------- MOBILE CARDS -------------------- */}
+      {/* ---------------- MOBILE CARDS ---------------- */}
       <div className="md:hidden space-y-4 px-2">
         {filteredStock.length === 0 ? (
           <p className="text-center text-gray-600">No records found.</p>
@@ -257,8 +338,8 @@ export default function HospitalManageStock() {
                 {editingId === s._id ? (
                   <Input
                     type="date"
-                    value={editValues.expiryDate}
                     className="mt-1"
+                    value={editValues.expiryDate}
                     onChange={(e) =>
                       setEditValues({ ...editValues, expiryDate: e.target.value })
                     }
@@ -270,45 +351,78 @@ export default function HospitalManageStock() {
                 )}
               </p>
 
-              {/* Status */}
               <p className="text-sm mt-1">
                 <span className="font-semibold">Status:</span> {s.status || "Available"}
               </p>
 
-              {/* Actions */}
-              <div className="flex gap-2 mt-3">
-                {editingId === s._id ? (
-                  <>
-                    <Button
-                      size="sm"
-                      className="bg-green-600 text-white"
-                      onClick={() => saveEdit(s._id)}
-                    >
-                      Save
-                    </Button>
-                    <Button size="sm" onClick={cancelEdit}>
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button size="sm" onClick={() => startEdit(s)}>
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => remove(s._id)}
-                      className="bg-red-600 text-white"
-                    >
-                      Delete
-                    </Button>
-                  </>
+              {/* MOBILE ACTION ICONS */}
+              <div className="flex items-center gap-6 mt-3">
+
+                {/* Save */}
+                {editingId === s._id && (
+                  <Save
+                    size={22}
+                    className="text-green-600 cursor-pointer hover:scale-125 transition"
+                    onClick={() => saveEdit(s._id)}
+                  />
                 )}
+
+                {/* Cancel */}
+                {editingId === s._id && (
+                  <X
+                    size={22}
+                    className="text-gray-500 cursor-pointer hover:scale-125 transition"
+                    onClick={cancelEdit}
+                  />
+                )}
+
+                {/* Edit */}
+                {editingId !== s._id && (
+                  <Pencil
+                    size={22}
+                    className="text-blue-600 cursor-pointer hover:scale-125 transition"
+                    onClick={() => startEdit(s)}
+                  />
+                )}
+
+                {/* Delete */}
+                {editingId !== s._id && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Trash2
+                        size={22}
+                        className="text-red-600 cursor-pointer hover:scale-125 transition"
+                        onClick={() => setDeleteId(s._id)}
+                      />
+                    </AlertDialogTrigger>
+
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this stock record?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>No</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-red-600 text-white hover:bg-red-700"
+                          onClick={() => deleteStock(deleteId)}
+                        >
+                          Yes, Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+
               </div>
             </Card>
           ))
         )}
       </div>
+
     </div>
   );
 }

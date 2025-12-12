@@ -4,6 +4,8 @@ const Appointment = require('../models/appointmentModel');
 const RecipientRequest = require('../models/recipientRequestModel');
 const DeleteLog = require('../models/deleteLogModel');
 const generateToken = require('../utils/generateToken');
+const Donor = require("../models/donorModel");
+
 // Register Hospital
 exports.registerHospital = async (req, res) => {
   try {
@@ -160,16 +162,33 @@ exports.getAppointments = async (req, res) => {
   }
 };
 
-//Approve or Reject Appointment
+//update hospital appoinments
 exports.updateAppointmentStatus = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
-    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
 
+    // Update status
     appointment.status = req.body.status || appointment.status;
     await appointment.save();
-    res.json({ message: 'Appointment status updated successfully' });
+
+    // When Completed → update donor lastDonationDate immediately
+    if (req.body.status === "Completed") {
+      const donor = await Donor.findById(appointment.donor);
+
+      if (donor) {
+        donor.lastDonationDate = new Date();         // today
+        donor.eligibilityStatus = "Not Eligible";    // optional lockout
+        await donor.save();
+      }
+    }
+
+    res.json({ message: "Appointment status updated successfully" });
+
   } catch (error) {
+    console.error("Update appointment error:", error);
     res.status(500).json({ message: error.message });
   }
 };

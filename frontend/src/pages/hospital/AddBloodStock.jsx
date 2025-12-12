@@ -69,10 +69,10 @@ export default function AddBloodStock() {
     <div className="w-full space-y-6 mt-6 md:mt-8">
 
       {/* ---------------- HEADER ---------------- */}
-      <header className="px-4 py-5 bg-white dark:bg-gray-900 shadow-sm rounded-lg">
-        <h2 className="text-2xl font-bold text-red-600 dark:text-red-400">
+     <header className="py-4 text-center">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Add Blood Stock
-        </h2>
+        </h1>
       </header>
 
       {/* ---------------- FORM CARD ---------------- */}

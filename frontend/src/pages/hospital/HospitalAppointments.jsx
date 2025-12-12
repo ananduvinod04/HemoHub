@@ -2,28 +2,44 @@ import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
 
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCaption, TableCell,
+  TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
+  Select, SelectTrigger, SelectValue,
+  SelectContent, SelectItem,
 } from "@/components/ui/select";
 
 import Loader from "@/components/common/Loader";
+import { toast } from "sonner";
+
+// ⭐ LUCIDE ICONS
+import { Check, CheckCheck, X } from "lucide-react";
+
+// ⭐ TOOLTIP
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+
+// ⭐ CANCEL CONFIRMATION DIALOG
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export default function HospitalAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -33,6 +49,15 @@ export default function HospitalAppointments() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
+  // Pagination
+  const isMobile = window.innerWidth < 768;
+  const itemsPerPage = isMobile ? 5 : 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Cancel confirmation
+  const [cancelId, setCancelId] = useState(null);
+
+  // Load appointments
   async function load() {
     try {
       const res = await api.get("/hospital/appointments");
@@ -48,13 +73,14 @@ export default function HospitalAppointments() {
     load();
   }, []);
 
+  // ⭐ Update Status
   async function updateStatus(id, status) {
     try {
       await api.put(`/hospital/appointments/${id}/status`, { status });
+      toast.success(`Status changed to ${status}`);
       load();
     } catch (err) {
-      console.error("Update error:", err);
-      alert("Failed to update");
+      toast.error("Failed to update appointment");
     }
   }
 
@@ -65,11 +91,23 @@ export default function HospitalAppointments() {
       </div>
     );
 
-  // ----------------- FILTER + SEARCH -----------------
-  const filtered = appointments.filter((a) => {
+  // ---------------- SORTING: Pending → Approved → Completed → Cancelled ----------------
+  const sorted = [...appointments].sort((a, b) => {
+    const order = { Pending: 1, Approved: 2, Completed: 3, Cancelled: 4 };
+
+    if (order[a.status] !== order[b.status]) {
+      return order[a.status] - order[b.status];
+    }
+
+    // newest first
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  // ---------------- FILTER + SEARCH ----------------
+  const filtered = sorted.filter((a) => {
     const s = search.toLowerCase();
 
-    const match =
+    const matchText =
       a.donor?.name?.toLowerCase().includes(s) ||
       a.type?.toLowerCase().includes(s) ||
       new Date(a.date).toLocaleDateString().includes(s);
@@ -77,30 +115,44 @@ export default function HospitalAppointments() {
     const matchStatus =
       statusFilter === "All" || a.status === statusFilter;
 
-    return match && matchStatus;
+    return matchText && matchStatus;
   });
 
-  return (
-    <div className="w-full space-y-6">
+  // ---------------- PAGINATION ----------------
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const first = (currentPage - 1) * itemsPerPage;
+  const currentItems = filtered.slice(first, first + itemsPerPage);
 
-      {/* ---------------- HEADER ---------------- */}
-      <header className="px-4 py-6 bg-white dark:bg-gray-900 shadow-sm rounded-lg mt-4">
-        <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
-          Manage Appointments
-        </h2>
+  return (
+    <div className="w-full space-y-6 mt-4 pb-10">
+
+      {/* HEADER */}
+      <header className="py-4 text-center">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
+          Donor Appointments
+        </h1>
       </header>
 
-      {/* ------------- SEARCH + FILTER ------------ */}
+      {/* SEARCH + FILTER */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2">
 
         <Input
           placeholder="Search donor, type, or date..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
           className="md:w-1/3"
         />
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => {
+            setStatusFilter(v);
+            setCurrentPage(1);
+          }}
+        >
           <SelectTrigger className="md:w-48 w-full">
             <SelectValue placeholder="Filter Status" />
           </SelectTrigger>
@@ -113,9 +165,10 @@ export default function HospitalAppointments() {
             <SelectItem value="Cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
+
       </div>
 
-      {/* ------------ DESKTOP TABLE ------------ */}
+      {/* ---------------- DESKTOP TABLE ---------------- */}
       <div className="hidden md:block px-2">
         <Table>
           <TableCaption>Appointments placed with your hospital</TableCaption>
@@ -131,52 +184,104 @@ export default function HospitalAppointments() {
           </TableHeader>
 
           <TableBody>
-            {filtered.length === 0 ? (
+            {currentItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-gray-500">
                   No matching records.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((a) => (
+              currentItems.map((a) => (
                 <TableRow key={a._id}>
                   <TableCell>{a.donor?.name || "Unknown"}</TableCell>
                   <TableCell>{a.type}</TableCell>
                   <TableCell>{new Date(a.date).toLocaleDateString()}</TableCell>
                   <TableCell className="capitalize">{a.status}</TableCell>
 
-                  <TableCell className="space-x-2">
+                  {/* ⭐ ICON ACTIONS (DESKTOP) */}
+                  <TableCell>
+                    <div className="flex items-center gap-6">
 
-                    {a.status === "Pending" && (
-                      <Button
-                        size="sm"
-                        className="bg-green-600 text-white"
-                        onClick={() => updateStatus(a._id, "Approved")}
-                      >
-                        Approve
-                      </Button>
-                    )}
+                      {/* APPROVE */}
+                      {a.status === "Pending" && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Check
+                                size={24}
+                                className="text-green-600 cursor-pointer hover:scale-125 transition"
+                                onClick={() => updateStatus(a._id, "Approved")}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>Approve</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
 
-                    {a.status === "Approved" && (
-                      <Button
-                        size="sm"
-                        className="bg-blue-600 text-white"
-                        onClick={() => updateStatus(a._id, "Completed")}
-                      >
-                        Mark Completed
-                      </Button>
-                    )}
+                      {/* COMPLETE */}
+                      {a.status === "Approved" && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <CheckCheck
+                                size={24}
+                                className="text-blue-600 cursor-pointer hover:scale-125 transition"
+                                onClick={() => updateStatus(a._id, "Completed")}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>Mark Completed</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
 
-                    {a.status !== "Cancelled" && a.status !== "Completed" && (
-                      <Button
-                        size="sm"
-                        className="bg-red-600 text-white"
-                        onClick={() => updateStatus(a._id, "Cancelled")}
-                      >
-                        Cancel
-                      </Button>
-                    )}
+                      {/* CANCEL WITH FIXED CONFIRMATION POPUP */}
+                      {a.status !== "Completed" && a.status !== "Cancelled" && (
+                        <AlertDialog>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="cursor-pointer"
+                                  onClick={() => setCancelId(a._id)}
+                                >
+                                  <AlertDialogTrigger asChild>
+                                    <X
+                                      size={24}
+                                      className="text-red-600 hover:scale-125 transition"
+                                    />
+                                  </AlertDialogTrigger>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>Cancel</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. The appointment will be permanently marked as cancelled.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>No</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-600 text-white hover:bg-red-700"
+                                onClick={() => {
+                                  updateStatus(cancelId, "Cancelled");
+                                  setCancelId(null);
+                                }}
+                              >
+                                Yes, Cancel
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+
+                        </AlertDialog>
+                      )}
+
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -186,9 +291,9 @@ export default function HospitalAppointments() {
         </Table>
       </div>
 
-      {/* ------------ MOBILE CARD VIEW (UPDATED) ------------ */}
+      {/* ---------------- MOBILE CARDS ---------------- */}
       <div className="md:hidden px-2 space-y-4">
-        {filtered.map((a) => (
+        {currentItems.map((a) => (
           <Card key={a._id} className="p-4 shadow-sm border space-y-2">
 
             <p className="text-lg font-semibold text-red-600">
@@ -196,45 +301,64 @@ export default function HospitalAppointments() {
             </p>
 
             <p><strong>Type:</strong> {a.type}</p>
-
             <p><strong>Date:</strong> {new Date(a.date).toLocaleDateString()}</p>
+            <p><strong>Status:</strong> <span className="capitalize">{a.status}</span></p>
 
-            <p>
-              <strong>Status:</strong>{" "}
-              <span className="capitalize">{a.status}</span>
-            </p>
+            {/* ⭐ ICON ACTIONS (MOBILE) */}
+            <div className="flex items-center gap-8 mt-4">
 
-            {/* BUTTONS FIXED FOR MOBILE */}
-            <div className="flex flex-col gap-2 mt-3 w-full">
-
+              {/* APPROVE */}
               {a.status === "Pending" && (
-                <Button
-                  size="sm"
-                  className="bg-green-600 text-white w-full"
+                <Check
+                  size={28}
+                  className="text-green-600 cursor-pointer hover:scale-125 transition"
                   onClick={() => updateStatus(a._id, "Approved")}
-                >
-                  Approve
-                </Button>
+                />
               )}
 
+              {/* COMPLETE */}
               {a.status === "Approved" && (
-                <Button
-                  size="sm"
-                  className="bg-blue-600 text-white w-full"
+                <CheckCheck
+                  size={28}
+                  className="text-blue-600 cursor-pointer hover:scale-125 transition"
                   onClick={() => updateStatus(a._id, "Completed")}
-                >
-                  Complete
-                </Button>
+                />
               )}
 
-              {a.status !== "Cancelled" && a.status !== "Completed" && (
-                <Button
-                  size="sm"
-                  className="bg-red-600 text-white w-full"
-                  onClick={() => updateStatus(a._id, "Cancelled")}
-                >
-                  Cancel
-                </Button>
+              {/* CANCEL WITH CONFIRMATION */}
+              {a.status !== "Completed" && a.status !== "Cancelled" && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <X
+                      size={28}
+                      className="text-red-600 cursor-pointer hover:scale-125 transition"
+                      onClick={() => setCancelId(a._id)}
+                    />
+                  </AlertDialogTrigger>
+
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. Cancelling will permanently mark this appointment as cancelled.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-red-600 text-white hover:bg-red-700"
+                        onClick={() => {
+                          updateStatus(cancelId, "Cancelled");
+                          setCancelId(null);
+                        }}
+                      >
+                        Yes, Cancel
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+
+                </AlertDialog>
               )}
 
             </div>
@@ -242,6 +366,33 @@ export default function HospitalAppointments() {
           </Card>
         ))}
       </div>
+
+      {/* ---------------- PAGINATION ---------------- */}
+      {filtered.length > 0 && (
+        <div className="flex justify-center mt-4 gap-2">
+
+          <button
+            className="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            Prev
+          </button>
+
+          <span className="px-4 py-2 text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            className="px-3 py-1 border rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            Next
+          </button>
+
+        </div>
+      )}
 
     </div>
   );

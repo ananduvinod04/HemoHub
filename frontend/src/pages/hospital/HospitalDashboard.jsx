@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-
-// RECHARTS
 import {
   PieChart,
   Pie,
@@ -11,9 +9,12 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
+
 import Loader from "@/components/common/Loader";
 
 export default function HospitalDashboard() {
+  const [profile, setProfile] = useState(null);
+
   const [stats, setStats] = useState({
     totalUnits: 0,
     totalAppointments: 0,
@@ -29,21 +30,22 @@ export default function HospitalDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [stockRes, apptRes, reqRes] = await Promise.all([
+        // Fetch dashboard data
+        const [stockRes, apptRes, reqRes, profRes] = await Promise.all([
           api.get("/hospital/stock"),
           api.get("/hospital/appointments"),
           api.get("/hospital/requests"),
+          api.get("/hospital/profile"),
         ]);
+
+        // SET HOSPITAL PROFILE
+        setProfile(profRes.data);
 
         const stock = stockRes.data || [];
         const appointments = apptRes.data || [];
         const requests = reqRes.data || [];
 
-        const totalUnits = stock.reduce(
-          (sum, s) => sum + (s.units || 0),
-          0
-        );
-
+        const totalUnits = stock.reduce((sum, s) => sum + (s.units || 0), 0);
         const pendingRequests = requests.filter((r) => r.status === "Pending").length;
 
         // ---- BLOOD GROUP STOCK PIE DATA ----
@@ -57,7 +59,7 @@ export default function HospitalDashboard() {
           units,
         }));
 
-        // ---- OVERALL PIE SUMMARY ----
+        // ---- OVERALL SUMMARY PIE ----
         const summaryPie = [
           { name: "Appointments", value: appointments.length, color: "#dc2626" },
           { name: "Requests", value: requests.length, color: "#f87171" },
@@ -73,7 +75,6 @@ export default function HospitalDashboard() {
 
         setStockData(stockFormatted);
         setOverallSummary(summaryPie);
-
       } catch (err) {
         console.log("Dashboard load error", err);
       } finally {
@@ -102,12 +103,20 @@ export default function HospitalDashboard() {
     <div className="space-y-10 mt-6 md:mt-8">
 
       {/* ---------- HEADER ---------- */}
-      <header className="px-4 py-8 bg-white dark:bg-gray-900 shadow-sm rounded-lg">
-        <h2 className="text-3xl font-bold text-red-600 dark:text-red-400">
+      <header className="py-2 text-center mt-2 mb-1">
+        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Hospital Dashboard
-        </h2>
-      </header>
+        </h1>
 
+        {/* Display Logged-in Hospital Name */}
+        <p className="text-base text-gray-700 dark:text-gray-300 mt-1">
+          Welcome,{" "}
+          <span className="font-semibold">
+            {profile?.hospitalName}
+          </span>{" "}
+          👋
+        </p>
+      </header>
 
       {/* ---------- TOP STAT CARDS ---------- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
@@ -141,7 +150,7 @@ export default function HospitalDashboard() {
 
         <Card className="shadow-sm border text-center">
           <CardHeader>
-            <CardTitle>Pending Requests</CardTitle>
+            <CardTitle>Pending</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl text-yellow-600 font-bold">
@@ -152,12 +161,10 @@ export default function HospitalDashboard() {
 
       </div>
 
-
       {/* ---------- CHARTS SECTION ---------- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
 
-
-        {/* ---------- BLOOD STOCK PIE CHART ---------- */}
+        {/* ---------- BLOOD STOCK PIE ---------- */}
         <Card className="shadow-sm border">
           <CardHeader>
             <CardTitle className="text-lg font-semibold">
@@ -166,7 +173,6 @@ export default function HospitalDashboard() {
           </CardHeader>
 
           <CardContent>
-
             <div className="h-64 md:h-72 flex justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -209,7 +215,6 @@ export default function HospitalDashboard() {
           </CardContent>
         </Card>
 
-
         {/* ---------- OVERALL SUMMARY PIE ---------- */}
         <Card className="shadow-sm border">
           <CardHeader>
@@ -219,7 +224,6 @@ export default function HospitalDashboard() {
           </CardHeader>
 
           <CardContent>
-
             <div className="h-64 md:h-72 flex justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
