@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from "react";
 import api from "@/api/axiosInstance";
 
@@ -14,7 +12,6 @@ import {
 } from "@/components/ui/table";
 
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import {
@@ -27,6 +24,9 @@ import {
 
 // Page Loader
 import Loader from "@/components/common/Loader";
+
+//  Lucide Icon
+import { Trash2 } from "lucide-react";
 
 export default function RecipientRequests() {
   const [requests, setRequests] = useState([]);
@@ -64,8 +64,8 @@ export default function RecipientRequests() {
   if (loading)
     return (
       <div className="w-full h-screen flex items-center justify-center">
-  <Loader size={80} />
-</div>
+        <Loader size={80} />
+      </div>
     );
 
   // ----------------- SEARCH + FILTER LOGIC -----------------
@@ -76,7 +76,7 @@ export default function RecipientRequests() {
       r.hospital?.hospitalName.toLowerCase().includes(s) ||
       r.bloodGroup.toLowerCase().includes(s) ||
       r.quantity.toString().includes(s) ||
-      new Date(r.createdAt).toLocaleDateString().includes(s);  // ⭐ DATE SEARCH
+      new Date(r.createdAt).toLocaleDateString().includes(s);
 
     const matchStatus = statusFilter === "All" || r.status === statusFilter;
 
@@ -87,11 +87,12 @@ export default function RecipientRequests() {
     <div className="w-full space-y-6">
 
       {/* ---------------- HEADER ---------------- */}
-    <header className="py-2 text-center mt-2 mb-1">
+      <header className="py-2 text-center mt-2 mb-1">
         <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
-        My Blood Requests
+          My Blood Requests
         </h1>
       </header>
+
       {/* ---------------- SEARCH + FILTER ---------------- */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2">
 
@@ -127,7 +128,7 @@ export default function RecipientRequests() {
               <TableHead>Blood Group</TableHead>
               <TableHead>Qty</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>     {/* ⭐ ADDED */}
+              <TableHead>Date</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -147,16 +148,14 @@ export default function RecipientRequests() {
                   <TableCell>{r.quantity}</TableCell>
                   <TableCell className="capitalize">{r.status}</TableCell>
                   <TableCell>
-                    {new Date(r.createdAt).toLocaleDateString()} {/* ⭐ ADDED */}
+                    {new Date(r.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      className="bg-red-600 text-white"
+                    <Trash2
+                      size={20}
+                      className="text-red-600 cursor-pointer hover:scale-110 transition"
                       onClick={() => remove(r._id)}
-                    >
-                      Delete
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -169,7 +168,7 @@ export default function RecipientRequests() {
       {/* ---------------- MOBILE CARD VIEW ---------------- */}
       <div className="md:hidden px-2 space-y-4">
         {filtered.length === 0 ? (
-          <p className="text-center text-gray-600">No requests found.</p>
+          <p className="text-center text-gray-600">No requests f{/* ⭐ NEW */}ound.</p>
         ) : (
           filtered.map((r) => (
             <Card key={r._id} className="p-4 shadow-sm border space-y-2">
@@ -193,17 +192,16 @@ export default function RecipientRequests() {
 
               <p>
                 <strong>Date:</strong>{" "}
-                {new Date(r.createdAt).toLocaleDateString()} {/* ⭐ ADDED */}
+                {new Date(r.createdAt).toLocaleDateString()}
               </p>
 
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  className="bg-red-600 text-white w-full"
+              {/* Mobile delete icon */}
+              <div className="flex justify-end mt-3">
+                <Trash2
+                  size={22}
+                  className="text-red-600 cursor-pointer hover:scale-110 transition"
                   onClick={() => remove(r._id)}
-                >
-                  Delete Request
-                </Button>
+                />
               </div>
 
             </Card>

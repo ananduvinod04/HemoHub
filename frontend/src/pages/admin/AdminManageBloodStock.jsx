@@ -12,15 +12,34 @@ import {
 } from "@/components/ui/table";
 
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/common/Loader";
+
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+
+// ⭐ Lucide Icons
+import { PencilLine, Check, X } from "lucide-react";
 
 export default function AdminManageBloodStock() {
   const [stocks, setStocks] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editVals, setEditVals] = useState({ units: "", expiryDate: "" });
   const [loading, setLoading] = useState(true);
+
+  // Search + Filter
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  // Pagination
+  const isMobile = window.innerWidth < 768;
+  const itemsPerPage = isMobile ? 5 : 10;
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function load() {
     try {
@@ -45,32 +64,51 @@ export default function AdminManageBloodStock() {
     });
   }
 
-  function cancel() {
+  function cancelEdit() {
     setEditingId(null);
     setEditVals({ units: "", expiryDate: "" });
   }
 
-  async function save(id) {
+  async function saveEdit(id) {
     try {
       await api.put(`/admin/stock/${id}`, {
         units: Number(editVals.units),
         expiryDate: editVals.expiryDate,
       });
-      load();
       setEditingId(null);
+      load();
     } catch (err) {
-      console.error("Save stock error:", err);
       alert("Save failed");
     }
   }
 
-  // ----- Loading Stage (same as dashboard) -----
   if (loading) return <Loader className="h-12 w-12" />;
+
+  // ---------------- SEARCH + FILTER ----------------
+  const filtered = stocks.filter((s) => {
+    const q = search.toLowerCase();
+
+    const matchSearch =
+      s.hospital?.hospitalName?.toLowerCase().includes(q) ||
+      s.bloodGroup.toLowerCase().includes(q) ||
+      String(s.units).includes(q) ||
+      (s.expiryDate || "").includes(q);
+
+    const matchStatus =
+      statusFilter === "All" || s.status === statusFilter;
+
+    return matchSearch && matchStatus;
+  });
+
+  // ---------------- PAGINATION ----------------
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const start = (currentPage - 1) * itemsPerPage;
+  const currentItems = filtered.slice(start, start + itemsPerPage);
 
   return (
     <div className="p-6 space-y-6">
 
-      {/* ------------------ HEADER ------------------ */}
+      {/* HEADER */}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-red-600">
@@ -78,12 +116,36 @@ export default function AdminManageBloodStock() {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="text-gray-500 dark:text-gray-300">
-          View, edit, and update blood stock across all registered hospitals.
+        <CardContent className="flex flex-col md:flex-row gap-4">
+          <Input
+            placeholder="Search hospital, blood group, units, date..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="md:w-48">
+              <SelectValue placeholder="Filter Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Available">Available</SelectItem>
+              <SelectItem value="Expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
-      {/* ------------------ DESKTOP TABLE VIEW ------------------ */}
+      {/* ---------------- DESKTOP TABLE ---------------- */}
       <div className="hidden md:block">
         <Table>
           <TableCaption>All blood stock across hospitals</TableCaption>
@@ -100,15 +162,11 @@ export default function AdminManageBloodStock() {
           </TableHeader>
 
           <TableBody>
-            {stocks.map((s) => (
-              <TableRow
-                key={s._id}
-                className="hover:bg-white/10 hover:backdrop-blur-sm transition"
-              >
+            {currentItems.map((s) => (
+              <TableRow key={s._id}>
                 <TableCell>{s.hospital?.hospitalName || "-"}</TableCell>
                 <TableCell>{s.bloodGroup}</TableCell>
 
-                {/* Units */}
                 <TableCell>
                   {editingId === s._id ? (
                     <Input
@@ -122,17 +180,13 @@ export default function AdminManageBloodStock() {
                   )}
                 </TableCell>
 
-                {/* Expiry */}
                 <TableCell>
                   {editingId === s._id ? (
                     <Input
                       type="date"
                       value={editVals.expiryDate}
                       onChange={(e) =>
-                        setEditVals({
-                          ...editVals,
-                          expiryDate: e.target.value,
-                        })
+                        setEditVals({ ...editVals, expiryDate: e.target.value })
                       }
                     />
                   ) : s.expiryDate ? (
@@ -145,24 +199,25 @@ export default function AdminManageBloodStock() {
                 <TableCell>{s.status || "Available"}</TableCell>
 
                 <TableCell>
-                  {editingId === s._id ? (
-                    <>
-                      <Button
-                        size="sm"
-                        className="mr-2 bg-green-600 text-white"
-                        onClick={() => save(s._id)}
-                      >
-                        Save
-                      </Button>
-                      <Button size="sm" onClick={cancel}>
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <Button size="sm" onClick={() => startEdit(s)}>
-                      Edit
-                    </Button>
-                  )}
+                  <div className="flex gap-4">
+                    {editingId === s._id ? (
+                      <>
+                        <Check
+                          className="text-green-600 cursor-pointer hover:scale-110"
+                          onClick={() => saveEdit(s._id)}
+                        />
+                        <X
+                          className="text-red-600 cursor-pointer hover:scale-110"
+                          onClick={cancelEdit}
+                        />
+                      </>
+                    ) : (
+                      <PencilLine
+                        className="text-blue-600 cursor-pointer hover:scale-110"
+                        onClick={() => startEdit(s)}
+                      />
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -170,27 +225,18 @@ export default function AdminManageBloodStock() {
         </Table>
       </div>
 
-      {/* ------------------ MOBILE CARD VIEW ------------------ */}
+      {/* ---------------- MOBILE CARDS ---------------- */}
       <div className="md:hidden space-y-4">
-        {stocks.map((s) => (
-          <Card
-            key={s._id}
-            className="p-4 space-y-3 hover:bg-white/10 hover:backdrop-blur-sm transition shadow-md"
-          >
-            <CardContent className="space-y-3">
+        {currentItems.map((s) => (
+          <Card key={s._id} className="p-4">
+            <CardContent className="space-y-2">
+              <h3 className="font-semibold">{s.hospital?.hospitalName}</h3>
+              <p><strong>Blood:</strong> {s.bloodGroup}</p>
 
-              <h3 className="text-lg font-semibold">
-                {s.hospital?.hospitalName || "-"}
-              </h3>
-
-              <p><strong>Blood Group:</strong> {s.bloodGroup}</p>
-
-              {/* Units */}
-              <div>
+              <p>
                 <strong>Units:</strong>{" "}
                 {editingId === s._id ? (
                   <Input
-                    className="mt-1"
                     value={editVals.units}
                     onChange={(e) =>
                       setEditVals({ ...editVals, units: e.target.value })
@@ -199,65 +245,72 @@ export default function AdminManageBloodStock() {
                 ) : (
                   s.units
                 )}
-              </div>
+              </p>
 
-              {/* Expiry */}
-              <div>
+              <p>
                 <strong>Expiry:</strong>{" "}
                 {editingId === s._id ? (
                   <Input
                     type="date"
-                    className="mt-1"
                     value={editVals.expiryDate}
                     onChange={(e) =>
-                      setEditVals({
-                        ...editVals,
-                        expiryDate: e.target.value,
-                      })
+                      setEditVals({ ...editVals, expiryDate: e.target.value })
                     }
                   />
-                ) : s.expiryDate ? (
-                  new Date(s.expiryDate).toLocaleDateString()
                 ) : (
-                  "-"
+                  new Date(s.expiryDate).toLocaleDateString()
+                )}
+              </p>
+
+              <p><strong>Status:</strong> {s.status}</p>
+
+              <div className="flex justify-end gap-6 pt-2">
+                {editingId === s._id ? (
+                  <>
+                    <Check
+                      className="text-green-600 cursor-pointer"
+                      onClick={() => saveEdit(s._id)}
+                    />
+                    <X
+                      className="text-red-600 cursor-pointer"
+                      onClick={cancelEdit}
+                    />
+                  </>
+                ) : (
+                  <PencilLine
+                    className="text-blue-600 cursor-pointer"
+                    onClick={() => startEdit(s)}
+                  />
                 )}
               </div>
-
-              <p><strong>Status:</strong> {s.status || "Available"}</p>
-
-              {/* Actions */}
-              {editingId === s._id ? (
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    className="bg-green-600 text-white w-full"
-                    onClick={() => save(s._id)}
-                  >
-                    Save
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={cancel}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => startEdit(s)}
-                >
-                  Edit
-                </Button>
-              )}
-
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* ---------------- PAGINATION ---------------- */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+          >
+            Prev
+          </button>
+
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -159,7 +159,7 @@ export default function RecipientBloodStock() {
 
               <p>
                 <strong>Address:</strong>{" "}
-                {s.hospital?.address || "N/A"}                   {/* ⭐ NEW */}
+                {s.hospital?.address || "N/A"}                   
               </p>
 
               <p>

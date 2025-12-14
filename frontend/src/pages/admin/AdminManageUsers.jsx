@@ -13,7 +13,8 @@ import {
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // <-- IMPORTANT
+import { Label } from "@/components/ui/label";
+
 import {
   Select,
   SelectTrigger,
@@ -27,12 +28,27 @@ import Loader from "@/components/common/Loader";
 
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+// ⭐ Alert Dialog
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+
+// ⭐ Lucide Icons
+import { PencilLine, Trash2 } from "lucide-react";
 
 export default function AdminManageUsers() {
   const [allUsers, setAllUsers] = useState([]);
@@ -43,35 +59,30 @@ export default function AdminManageUsers() {
   const [search, setSearch] = useState("");
   const [userType, setUserType] = useState("All");
 
+  // Pagination
+  const isMobile = window.innerWidth < 768;
+  const itemsPerPage = isMobile ? 5 : 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Edit dialog state
   const [editOpen, setEditOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [editValues, setEditValues] = useState({});
 
-  // Load users from backend
+  // Delete dialog state
+  const [deleteUser, setDeleteUser] = useState(null);
+
   async function load() {
     try {
       const res = await api.get("/admin/users");
 
-      const donors = (res.data.donors || []).map((u) => ({
-        ...u,
-        userType: "Donor",
-      }));
-
-      const hospitals = (res.data.hospitals || []).map((u) => ({
-        ...u,
-        userType: "Hospital",
-      }));
-
-      const recipients = (res.data.recipients || []).map((u) => ({
-        ...u,
-        userType: "Recipient",
-      }));
+      const donors = (res.data.donors || []).map((u) => ({ ...u, userType: "Donor" }));
+      const hospitals = (res.data.hospitals || []).map((u) => ({ ...u, userType: "Hospital" }));
+      const recipients = (res.data.recipients || []).map((u) => ({ ...u, userType: "Recipient" }));
 
       const merged = [...donors, ...hospitals, ...recipients];
       setAllUsers(merged);
       setFiltered(merged);
-
     } catch (err) {
       console.error("Load users error:", err);
     } finally {
@@ -83,23 +94,22 @@ export default function AdminManageUsers() {
     load();
   }, []);
 
-  // Delete user
-  async function removeUser(type, id) {
-    if (!confirm("Delete this user?")) return;
+  async function confirmDelete() {
+    if (!deleteUser) return;
 
     try {
-      await api.delete(`/admin/delete/${type}/${id}`);
+      await api.delete(
+        `/admin/delete/${deleteUser.userType.toLowerCase()}/${deleteUser._id}`
+      );
+      setDeleteUser(null);
       load();
     } catch (err) {
-      console.error("Delete user error:", err);
-      alert("Failed to delete");
+      alert("Failed to delete user");
     }
   }
 
-  // Open Edit Dialog
   function openEditModal(user) {
     setEditUser(user);
-
     setEditValues({
       name: user.name || user.hospitalName || "",
       email: user.email || "",
@@ -107,25 +117,22 @@ export default function AdminManageUsers() {
       age: user.age || "",
       address: user.address || "",
     });
-
     setEditOpen(true);
   }
 
-  // Save Edit
   async function saveEdit() {
-    const type = editUser.userType.toLowerCase(); // donor / hospital / recipient
+    const type = editUser.userType.toLowerCase();
 
     try {
       await api.put(`/admin/update/${type}/${editUser._id}`, editValues);
       setEditOpen(false);
       load();
-    } catch (err) {
-      console.error("Update error:", err);
+    } catch {
       alert("Failed to update user");
     }
   }
 
-  // Search + Filters
+  // Search + Filter
   useEffect(() => {
     let list = [...allUsers];
 
@@ -143,14 +150,20 @@ export default function AdminManageUsers() {
     }
 
     setFiltered(list);
+    setCurrentPage(1);
   }, [search, userType, allUsers]);
 
   if (loading) return <Loader className="h-12 w-12" />;
 
+  // Pagination
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const start = (currentPage - 1) * itemsPerPage;
+  const currentItems = filtered.slice(start, start + itemsPerPage);
+
   return (
     <div className="p-6 space-y-6">
 
-      {/* ---------------- HEADER ---------------- */}
+      {/* HEADER */}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-red-600">
@@ -159,20 +172,16 @@ export default function AdminManageUsers() {
         </CardHeader>
 
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          {/* SEARCH */}
           <Input
             placeholder="Search by name, email, or hospital..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          {/* USER TYPE FILTER */}
           <Select value={userType} onValueChange={setUserType}>
             <SelectTrigger>
               <SelectValue placeholder="User Type" />
             </SelectTrigger>
-
             <SelectContent>
               <SelectItem value="All">All Users</SelectItem>
               <SelectItem value="Donor">Donor</SelectItem>
@@ -180,13 +189,12 @@ export default function AdminManageUsers() {
               <SelectItem value="Recipient">Recipient</SelectItem>
             </SelectContent>
           </Select>
-
         </CardContent>
       </Card>
 
-      {/* ---------------- DESKTOP TABLE ---------------- */}
-      <div className="hidden md:table w-full">
-        <Table className="w-full">
+      {/* DESKTOP TABLE */}
+      <div className="hidden md:block">
+        <Table>
           <TableCaption>All system users</TableCaption>
 
           <TableHeader>
@@ -200,41 +208,54 @@ export default function AdminManageUsers() {
           </TableHeader>
 
           <TableBody>
-            {filtered.map((u) => (
-              <TableRow
-                key={u._id}
-                className="hover:bg-white/10 hover:backdrop-blur-sm transition"
-              >
+            {currentItems.map((u) => (
+              <TableRow key={u._id}>
                 <TableCell>{u.userType}</TableCell>
-
-                <TableCell>
-                  {u.userType === "Hospital" ? u.hospitalName : u.name}
-                </TableCell>
-
+                <TableCell>{u.userType === "Hospital" ? u.hospitalName : u.name}</TableCell>
                 <TableCell>{u.email}</TableCell>
-
                 <TableCell>
                   {u.userType === "Hospital"
                     ? u.address
-                    : u.age
-                    ? `Age: ${u.age} | Blood: ${u.bloodGroup}`
-                    : "-"}
+                    : `Age: ${u.age || "-"} | Blood: ${u.bloodGroup || "-"}`}
                 </TableCell>
 
-                <TableCell className="space-x-2">
-                  <Button size="sm" onClick={() => openEditModal(u)}>
-                    Edit
-                  </Button>
+                <TableCell>
+                  <div className="flex items-center gap-4">
+                    <PencilLine
+                      size={20}
+                      className="text-blue-600 cursor-pointer hover:scale-110"
+                      onClick={() => openEditModal(u)}
+                    />
 
-                  <Button
-                    size="sm"
-                    className="bg-red-600 text-white"
-                    onClick={() =>
-                      removeUser(u.userType.toLowerCase(), u._id)
-                    }
-                  >
-                    Delete
-                  </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Trash2
+                          size={20}
+                          className="text-red-600 cursor-pointer hover:scale-110"
+                          onClick={() => setDeleteUser(u)}
+                        />
+                      </AlertDialogTrigger>
+
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. The user will be permanently removed.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-red-600 text-white hover:bg-red-700"
+                            onClick={confirmDelete}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -242,75 +263,92 @@ export default function AdminManageUsers() {
         </Table>
       </div>
 
-      {/* ---------------- MOBILE CARD VIEW ---------------- */}
-      {/* ---------------- MOBILE CARDS ---------------- */}
-<div className="md:hidden space-y-4">
-  {filtered.map((u) => (
-    <Card
-      key={u._id}
-      className="
-        p-4 shadow-md 
-        hover:bg-white/10 hover:backdrop-blur-sm 
-        transition duration-200
-      "
-    >
-      <CardContent className="space-y-3">
+      {/* MOBILE CARDS */}
+      <div className="md:hidden space-y-4">
+        {currentItems.map((u) => (
+          <Card key={u._id} className="p-4">
+            <CardContent className="space-y-2">
+              <h3 className="font-semibold">{u.userType}</h3>
+              <p><strong>Name:</strong> {u.userType === "Hospital" ? u.hospitalName : u.name}</p>
+              <p><strong>Email:</strong> {u.email}</p>
 
-        <h3 className="text-lg font-semibold">{u.userType}</h3>
+              <div className="flex justify-end gap-4 mt-3">
+                <PencilLine
+                  size={22}
+                  className="text-blue-600 cursor-pointer"
+                  onClick={() => openEditModal(u)}
+                />
 
-        <p><strong>Name:</strong> {u.userType === "Hospital" ? u.hospitalName : u.name}</p>
-        <p><strong>Email:</strong> {u.email}</p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Trash2
+                      size={22}
+                      className="text-red-600 cursor-pointer"
+                      onClick={() => setDeleteUser(u)}
+                    />
+                  </AlertDialogTrigger>
 
-        {u.userType === "Hospital" ? (
-          <p><strong>Address:</strong> {u.address}</p>
-        ) : (
-          <>
-            <p><strong>Age:</strong> {u.age || "-"}</p>
-            <p><strong>Blood Group:</strong> {u.bloodGroup || "-"}</p>
-          </>
-        )}
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
 
-        {/* RESPONSIVE BUTTONS FIX */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-3 w-full">
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-red-600 text-white hover:bg-red-700"
+                        onClick={confirmDelete}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4">
           <Button
-            size="sm"
-            className="w-full"
-            onClick={() => openEditModal(u)}
+            variant="outline"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
           >
-            Edit
+            Prev
           </Button>
 
-          <Button
-            size="sm"
-            className="w-full bg-red-600 text-white"
-            onClick={() => removeUser(u.userType.toLowerCase(), u._id)}
-          >
-            Delete
-          </Button>
+          <span className="text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
 
+          <Button
+            variant="outline"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            Next
+          </Button>
         </div>
-      </CardContent>
-    </Card>
-  ))}
-</div>
+      )}
 
-
-      {/* ---------------- EDIT USER DIALOG ---------------- */}
+      {/* EDIT DIALOG */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
 
-          {/* FORM */}
-          <div className="space-y-4 mt-4">
-
-            {/* NAME */}
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <div>
               <Label>Name</Label>
               <Input
-                placeholder="Enter name"
                 value={editValues.name}
                 onChange={(e) =>
                   setEditValues({ ...editValues, name: e.target.value })
@@ -318,79 +356,25 @@ export default function AdminManageUsers() {
               />
             </div>
 
-            {/* EMAIL */}
-            <div className="space-y-2">
+            <div>
               <Label>Email</Label>
               <Input
-                placeholder="Enter email"
                 value={editValues.email}
                 onChange={(e) =>
                   setEditValues({ ...editValues, email: e.target.value })
                 }
               />
             </div>
-
-            {/* SPECIAL FIELDS BASED ON USER TYPE */}
-
-            {/* HOSPITAL */}
-            {editUser?.userType === "Hospital" && (
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Input
-                  placeholder="Enter address"
-                  value={editValues.address}
-                  onChange={(e) =>
-                    setEditValues({
-                      ...editValues,
-                      address: e.target.value,
-                    })
-                  }
-                />
-              </div>
-            )}
-
-            {/* DONOR / RECIPIENT */}
-            {editUser?.userType !== "Hospital" && (
-              <>
-                <div className="space-y-2">
-                  <Label>Age</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter age"
-                    value={editValues.age}
-                    onChange={(e) =>
-                      setEditValues({
-                        ...editValues,
-                        age: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Blood Group</Label>
-                  <Input
-                    placeholder="Enter blood group"
-                    value={editValues.bloodGroup}
-                    onChange={(e) =>
-                      setEditValues({
-                        ...editValues,
-                        bloodGroup: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </>
-            )}
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter>
             <Button onClick={saveEdit} className="bg-green-600 text-white">
               Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

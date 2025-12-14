@@ -8,15 +8,19 @@ const RecipientRequest = require('../models/recipientRequestModel');
 const Appointment = require('../models/appointmentModel');
 const generateToken = require('../utils/generateToken');
 
+
 // Register Admin (Super Admin only)
 exports.registerAdmin = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     const existing = await Admin.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'Admin already exists' });
+    if (existing) {
+      return res.status(400).json({ message: 'Admin already exists' });
+    }
 
     const admin = await Admin.create({ name, email, password });
+
     res.status(201).json({
       success: true,
       message: 'Admin registered successfully',
@@ -29,7 +33,10 @@ exports.registerAdmin = async (req, res) => {
   }
 };
 
+
+// ===============================
 // Login Admin
+// ===============================
 exports.loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -62,11 +69,13 @@ exports.loginAdmin = async (req, res) => {
 };
 
 
-//  Get Admin Profile
+// Get Admin Profile
 exports.getAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin._id).select('-password');
-    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found' });
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
 
     res.status(200).json({ success: true, data: admin });
   } catch (error) {
@@ -74,27 +83,34 @@ exports.getAdminProfile = async (req, res) => {
   }
 };
 
-//  Update Admin Profile
+
+// ===============================
+// Update Admin Profile
+// ===============================
 exports.updateAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin._id);
-    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found' });
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
 
     admin.name = req.body.name || admin.name;
     admin.email = req.body.email || admin.email;
     if (req.body.password) admin.password = req.body.password;
 
     const updated = await admin.save();
-    res.json({ success: true, message: 'Profile updated successfully', data: updated });
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updated
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 
-
-
-//  Admin Dashboard Overview
+// Admin Dashboard Overview
 exports.getDashboard = async (req, res) => {
   try {
     const donors = await Donor.countDocuments();
@@ -118,6 +134,7 @@ exports.getDashboard = async (req, res) => {
   }
 };
 
+
 // View All Users
 exports.getAllUsers = async (req, res) => {
   try {
@@ -136,24 +153,28 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-//Update user details by type (Donor, Hospital, Recipient)
+
+// ===============================
+// Update User (Donor / Hospital / Recipient)
+// ===============================
 exports.updateUser = async (req, res) => {
   try {
     const { type, id } = req.params;
-    const updateData = req.body;
     let updatedUser;
 
     if (type === 'donor') {
-      updatedUser = await Donor.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+      updatedUser = await Donor.findByIdAndUpdate(id, req.body, { new: true }).select('-password');
     } else if (type === 'hospital') {
-      updatedUser = await Hospital.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+      updatedUser = await Hospital.findByIdAndUpdate(id, req.body, { new: true }).select('-password');
     } else if (type === 'recipient') {
-      updatedUser = await Recipient.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+      updatedUser = await Recipient.findByIdAndUpdate(id, req.body, { new: true }).select('-password');
     } else {
       return res.status(400).json({ success: false, message: 'Invalid user type' });
     }
 
-    if (!updatedUser) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     res.json({
       success: true,
@@ -166,10 +187,167 @@ exports.updateUser = async (req, res) => {
 };
 
 
+// Get All Donor Appointments (Admin)
+exports.getAllAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find()
+      .populate('donor', 'name bloodGroup age')
+      .sort({ date: -1 });
+
+    res.status(200).json({
+      success: true,
+      total: appointments.length,
+      data: appointments
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 
+// Update Donor Appointment (Admin)
+exports.updateAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-// Manage Blood Inventory (View All Stocks)
+    const allowedStatus = ['Pending', 'Approved', 'Completed', 'Cancelled'];
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid appointment status' });
+    }
+
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    appointment.status = status;
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: `Appointment updated to ${status}`,
+      data: appointment
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// Delete Donor Appointment (Admin)
+exports.deleteAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const appointment = await Appointment.findByIdAndDelete(id);
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+
+    await DeleteLog.create({
+      itemType: 'appointment',
+      deletedData: appointment
+    });
+
+    res.json({
+      success: true,
+      message: 'Appointment deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// ===============================
+// Get All Recipient Requests (Admin)
+// ===============================
+exports.getAllRequests = async (req, res) => {
+  try {
+    const requests = await RecipientRequest.find()
+      .populate('recipient', 'name bloodGroup')
+      .populate('hospital', 'hospitalName');
+
+    res.json({
+      success: true,
+      total: requests.length,
+      data: requests
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// Update Recipient Request Status (Admin)
+exports.updateRecipientRequestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const allowedStatus = ['Pending', 'Approved', 'Fulfilled', 'Rejected'];
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid request status' });
+    }
+
+    const request = await RecipientRequest.findById(id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Recipient request not found' });
+    }
+
+    request.status = status;
+    await request.save();
+
+    res.json({
+      success: true,
+      message: `Request updated to ${status}`,
+      data: request
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// 🔥 Delete Recipient Request (Admin)
+exports.deleteRecipientRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const request = await RecipientRequest.findByIdAndDelete(id);
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Recipient request not found'
+      });
+    }
+
+    await DeleteLog.create({
+      itemType: 'recipientRequest',
+      deletedData: request
+    });
+
+    res.json({
+      success: true,
+      message: 'Recipient request deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+// Blood Stock Management
 exports.getAllBloodStock = async (req, res) => {
   try {
     const stocks = await BloodStock.find().populate('hospital', 'hospitalName');
@@ -179,14 +357,12 @@ exports.getAllBloodStock = async (req, res) => {
   }
 };
 
-
-// Update Blood Stock Record
 exports.updateBloodStock = async (req, res) => {
   try {
-    const { id } = req.params;
-    const stock = await BloodStock.findByIdAndUpdate(id, req.body, { new: true });
-
-    if (!stock) return res.status(404).json({ success: false, message: 'Blood stock not found' });
+    const stock = await BloodStock.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!stock) {
+      return res.status(404).json({ success: false, message: 'Blood stock not found' });
+    }
 
     res.json({
       success: true,
@@ -199,38 +375,9 @@ exports.updateBloodStock = async (req, res) => {
 };
 
 
-//  Manage Requests (All recipient blood requests)
-exports.getAllRequests = async (req, res) => {
-  try {
-    const requests = await RecipientRequest.find()
-      .populate('recipient', 'name bloodGroup')
-      .populate('hospital', 'hospitalName');
-    res.json({ success: true, total: requests.length, data: requests });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
-// Update Appointment Details
-exports.updateAppointment = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const appointment = await Appointment.findByIdAndUpdate(id, req.body, { new: true });
+// Delete & Restore Users
 
-    if (!appointment) return res.status(404).json({ success: false, message: 'Appointment not found' });
-
-    res.json({
-      success: true,
-      message: 'Appointment updated successfully',
-      data: appointment
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-
-// Delete User (Soft Delete)
 exports.deleteUser = async (req, res) => {
   try {
     const { type, id } = req.params;
@@ -240,7 +387,9 @@ exports.deleteUser = async (req, res) => {
     else if (type === 'hospital') deletedUser = await Hospital.findByIdAndDelete(id);
     else if (type === 'recipient') deletedUser = await Recipient.findByIdAndDelete(id);
 
-    if (!deletedUser) return res.status(404).json({ message: `${type} not found` });
+    if (!deletedUser) {
+      return res.status(404).json({ message: `${type} not found` });
+    }
 
     await DeleteLog.create({ itemType: type, deletedData: deletedUser });
     res.json({ success: true, message: `${type} deleted and logged successfully` });
@@ -249,7 +398,6 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// View Delete Logs
 exports.getDeleteLogs = async (req, res) => {
   try {
     const logs = await DeleteLog.find().sort({ deletedAt: -1 });
@@ -259,7 +407,6 @@ exports.getDeleteLogs = async (req, res) => {
   }
 };
 
-// Restore from Delete Logs
 exports.restoreFromDeleteLogs = async (req, res) => {
   try {
     const log = await DeleteLog.findById(req.params.id);
@@ -278,7 +425,10 @@ exports.restoreFromDeleteLogs = async (req, res) => {
   }
 };
 
-//Logout
+
+
+// Logout Admin
+
 exports.logoutAdmin = async (req, res) => {
   try {
     res.clearCookie('token', {

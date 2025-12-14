@@ -29,7 +29,7 @@ const menu = [
   { title: "Stock", url: "/admin/stocks", icon: Database },
   { title: "Requests", url: "/admin/requests", icon: ListOrdered },
   { title: "Appointments", url: "/admin/appointments", icon: CalendarCheck },
-  { title: "Delete Logs", url: "/admin/delete-logs", icon: Trash2 },
+  // { title: "Delete Logs", url: "/admin/delete-logs", icon: Trash2 },
 ];
 
 export function AdminSidebar() {
