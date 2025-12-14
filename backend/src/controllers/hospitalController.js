@@ -21,8 +21,8 @@ exports.registerHospital = async (req, res) => {
     // Set JWT as cookie
     res.cookie('token', token, {
       httpOnly: true,                       
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'strict',                 
+      secure: true, 
+      sameSite: 'none',                 
       maxAge: 30 * 24 * 60 * 60 * 1000  
     });
 
@@ -51,8 +51,8 @@ exports.loginHospital = async (req, res) => {
       // Set cookie
       res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: true,
+        sameSite: 'none',
         maxAge: 30 * 24 * 60 * 60 * 1000
       });
 
