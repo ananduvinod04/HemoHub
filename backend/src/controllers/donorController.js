@@ -42,13 +42,18 @@ exports.loginDonor = async (req, res) => {
 
     if (donor && (await donor.matchPassword(password))) {
       const token = generateToken(donor._id);
+// res.cookie("token", token, {
+//   httpOnly: true,
+//   sameSite: "lax",
+//   secure: true,
+//   maxAge: 30 * 24 * 60 * 60 * 1000,
+// });
 res.cookie("token", token, {
   httpOnly: true,
-  sameSite: "lax",
   secure: true,
+  sameSite: "lax",
   maxAge: 30 * 24 * 60 * 60 * 1000,
 });
-
 
 
       res.json({
