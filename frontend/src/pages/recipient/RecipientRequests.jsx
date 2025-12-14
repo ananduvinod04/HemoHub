@@ -22,10 +22,19 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-// Page Loader
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+// Loader
 import Loader from "@/components/common/Loader";
 
-//  Lucide Icon
+// Icons
 import { Trash2 } from "lucide-react";
 
 export default function RecipientRequests() {
@@ -35,6 +44,11 @@ export default function RecipientRequests() {
   // Search + Filter
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const isMobile = window.innerWidth < 768;
+  const ITEMS_PER_PAGE = isMobile ? 5 : 10;
 
   async function load() {
     try {
@@ -60,7 +74,12 @@ export default function RecipientRequests() {
     }
   }
 
-  // PAGE LOADING
+  // Reset page on search/filter change
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  // ---------------- LOADING ----------------
   if (loading)
     return (
       <div className="w-full h-screen flex items-center justify-center">
@@ -68,7 +87,7 @@ export default function RecipientRequests() {
       </div>
     );
 
-  // ----------------- SEARCH + FILTER LOGIC -----------------
+  // ---------------- SEARCH + FILTER ----------------
   const filtered = requests.filter((r) => {
     const s = search.toLowerCase();
 
@@ -83,19 +102,26 @@ export default function RecipientRequests() {
     return match && matchStatus;
   });
 
+  // ---------------- PAGINATION ----------------
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+
+  const paginatedData = filtered.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
   return (
     <div className="w-full space-y-6">
 
-      {/* ---------------- HEADER ---------------- */}
+      {/* HEADER */}
       <header className="py-2 text-center mt-2 mb-1">
         <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           My Blood Requests
         </h1>
       </header>
 
-      {/* ---------------- SEARCH + FILTER ---------------- */}
+      {/* SEARCH + FILTER */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 px-2">
-
         <Input
           placeholder="Search by hospital, blood group, qty or date..."
           value={search}
@@ -117,7 +143,7 @@ export default function RecipientRequests() {
         </Select>
       </div>
 
-      {/* ---------------- DESKTOP TABLE VIEW ---------------- */}
+      {/* DESKTOP TABLE */}
       <div className="hidden md:block px-2">
         <Table>
           <TableCaption>Your blood requests</TableCaption>
@@ -134,14 +160,14 @@ export default function RecipientRequests() {
           </TableHeader>
 
           <TableBody>
-            {filtered.length === 0 ? (
+            {paginatedData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-gray-500 py-4">
                   No requests found.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((r) => (
+              paginatedData.map((r) => (
                 <TableRow key={r._id}>
                   <TableCell>{r.hospital?.hospitalName}</TableCell>
                   <TableCell>{r.bloodGroup}</TableCell>
@@ -161,41 +187,31 @@ export default function RecipientRequests() {
               ))
             )}
           </TableBody>
-
         </Table>
       </div>
 
-      {/* ---------------- MOBILE CARD VIEW ---------------- */}
+      {/* MOBILE CARDS */}
       <div className="md:hidden px-2 space-y-4">
-        {filtered.length === 0 ? (
-          <p className="text-center text-gray-600">No requests f{/* ⭐ NEW */}ound.</p>
+        {paginatedData.length === 0 ? (
+          <p className="text-center text-gray-600">No requests found.</p>
         ) : (
-          filtered.map((r) => (
+          paginatedData.map((r) => (
             <Card key={r._id} className="p-4 shadow-sm border space-y-2">
-
               <p className="text-lg font-bold text-red-600">
                 {r.hospital?.hospitalName}
               </p>
 
-              <p>
-                <strong>Blood Group:</strong> {r.bloodGroup}
-              </p>
-
-              <p>
-                <strong>Quantity:</strong> {r.quantity}
-              </p>
-
+              <p><strong>Blood Group:</strong> {r.bloodGroup}</p>
+              <p><strong>Quantity:</strong> {r.quantity}</p>
               <p>
                 <strong>Status:</strong>{" "}
                 <span className="capitalize">{r.status}</span>
               </p>
-
               <p>
                 <strong>Date:</strong>{" "}
                 {new Date(r.createdAt).toLocaleDateString()}
               </p>
 
-              {/* Mobile delete icon */}
               <div className="flex justify-end mt-3">
                 <Trash2
                   size={22}
@@ -203,11 +219,48 @@ export default function RecipientRequests() {
                   onClick={() => remove(r._id)}
                 />
               </div>
-
             </Card>
           ))
         )}
       </div>
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="flex justify-center py-6">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    isActive={page === i + 1}
+                    onClick={() => setPage(i + 1)}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  className={
+                    page === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
     </div>
   );
