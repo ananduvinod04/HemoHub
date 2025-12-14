@@ -44,7 +44,7 @@ exports.loginDonor = async (req, res) => {
       const token = generateToken(donor._id);
 res.cookie("token", token, {
   httpOnly: true,
-  sameSite: "none",
+  sameSite: "lax",
   secure: true,
   maxAge: 30 * 24 * 60 * 60 * 1000,
 });
