@@ -1,43 +1,47 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
-// DB
 const connectDB = require("../src/config/db");
 
-// Routes
-const testRoutes = require("../src/routes/testRoute");
 const donorRoutes = require("../src/routes/donorRoutes");
-const recipientRoutes = require("../src/routes/recipientRoutes");
 const hospitalRoutes = require("../src/routes/hospitalRoutes");
+const recipientRoutes = require("../src/routes/recipientRoutes");
 const adminRoutes = require("../src/routes/adminRoutes");
+
+const errorHandler = require("../src/middlewares/errorMiddleware");
 
 dotenv.config();
 
 const app = express();
 
-//Connect MongoDB
+// Connect DB (serverless-safe)
 connectDB();
 
-// Middlewares
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// CORS (important for frontend + cookies)
 app.use(
   cors({
-    origin:  process.env.FRONTEND_URL, // change this
+    origin: process.env.FRONTEND_URL, // 🔥 Vercel frontend
     credentials: true,
   })
 );
 
 // Routes
-app.use("/api", testRoutes);
+app.get("/", (req, res) => {
+  res.send("🚀 HemoHub Backend is Running!");
+});
+
 app.use("/api/donor", donorRoutes);
-app.use("/api/recipient", recipientRoutes);
 app.use("/api/hospital", hospitalRoutes);
+app.use("/api/recipient", recipientRoutes);
 app.use("/api/admin", adminRoutes);
 
+// Error handler
+app.use(errorHandler);
 
-module.exports = app; // REQUIRED for Vercel
+// ❌ NO app.listen()
+module.exports = app;
