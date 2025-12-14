@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import HistoryTable from "./DonationHistoryTable";
 import { useAuthStore } from "@/store/authStore";
 import Loader from "@/components/common/Loader";
+import { useNavigate } from "react-router-dom";
 
 // Pagination components
 import {
@@ -18,7 +19,9 @@ import {
 export default function DonorDashboard() {
   const [dashboard, setDashboard] = useState(null);
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true); // 🔥 NEW
   const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,12 +37,29 @@ export default function DonorDashboard() {
         setHistory(h.data.appointments || []);
       } catch (err) {
         console.log("Dashboard Error:", err);
+
+        // 🔥 Redirect on auth failure
+        if (err.response?.status === 401) {
+          navigate("/login");
+        }
+      } finally {
+        setLoading(false); // 🔥 ALWAYS stop loader
       }
     }
     loadData();
-  }, []);
+  }, [navigate]);
 
-  if (!dashboard) return <Loader size={64} className="mt-20" />;
+  // ✅ Proper loading check
+  if (loading) return <Loader size={64} className="mt-20" />;
+
+  // ✅ If no dashboard after loading → auth issue
+  if (!dashboard) {
+    return (
+      <p className="text-center mt-20 text-gray-500">
+        Unable to load dashboard. Please login again.
+      </p>
+    );
+  }
 
   // Pagination calculation
   const indexOfLast = currentPage * itemsPerPage;
@@ -52,164 +72,110 @@ export default function DonorDashboard() {
   return (
     <div className="space-y-10 py-4">
 
-      {/* ---------------- Header Section (Responsive Username) ---------------- */}
-    <header className="py-2 text-center mt-2 mb-1">
+      {/* HEADER */}
+      <header className="py-2 text-center mt-2 mb-1">
         <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Donor Dashboard
         </h1>
 
-        {/* Welcome Message */}
         <p className="text-base text-gray-700 dark:text-gray-300 mt-1">
           Welcome, <span className="font-semibold">{user?.name}</span> 👋
         </p>
       </header>
 
-      {/* ---------------- Dashboard Tiles ---------------- */}
+      {/* DASHBOARD CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
-
-        {/* TILE 1 */}
         <Card className="shadow-sm border">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">
-              Your Appointment Summary
-            </CardTitle>
+            <CardTitle>Your Appointment Summary</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-center mb-4">
-              <p className="text-4xl font-bold text-red-600">
-                {totalAppointments}
-              </p>
-              <p className="text-gray-600">Total Appointments</p>
-            </div>
+          <CardContent className="text-center">
+            <p className="text-4xl font-bold text-red-600">
+              {totalAppointments}
+            </p>
+            <p className="text-gray-600">Total Appointments</p>
           </CardContent>
         </Card>
 
-        {/* TILE 2 */}
         <Card className="shadow-sm border">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold">
-              Donation Eligibility
-            </CardTitle>
+            <CardTitle>Donation Eligibility</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-center mb-4">
-              <p
-                className={`text-3xl font-bold ${
-                  eligibilityStatus === "Eligible"
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {eligibilityStatus}
-              </p>
-              <p className="text-gray-600">Current Status</p>
-            </div>
+          <CardContent className="text-center">
+            <p
+              className={`text-3xl font-bold ${
+                eligibilityStatus === "Eligible"
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {eligibilityStatus}
+            </p>
+            <p className="text-gray-600">Current Status</p>
 
-            <div className="text-center">
-              <p className="text-gray-500 text-sm">Last Donation Date</p>
-              <p className="font-medium">
-                {lastDonationDate
-                  ? new Date(lastDonationDate).toLocaleDateString()
-                  : "No previous donation"}
-              </p>
-            </div>
+            <p className="text-sm mt-2">
+              Last Donation:{" "}
+              {lastDonationDate
+                ? new Date(lastDonationDate).toLocaleDateString()
+                : "No previous donation"}
+            </p>
           </CardContent>
         </Card>
-
       </div>
 
-      {/* ---------------- History Section ---------------- */}
+      {/* HISTORY */}
       <div className="px-2">
-
-        {/* Desktop Table */}
         <div className="hidden md:block">
           <HistoryTable history={currentItems} />
         </div>
 
-        {/* Mobile Cards */}
-        <div className="space-y-4 md:hidden">
+        <div className="md:hidden space-y-4">
           {currentItems.length === 0 ? (
             <p className="text-center text-gray-500">No history found.</p>
           ) : (
             currentItems.map((item) => (
-              <Card key={item._id} className="border shadow-sm p-4">
-                <div className="flex flex-col gap-2">
-
-                  <p className="text-base font-semibold text-red-600">
-                    {item.type}
-                  </p>
-
-                  <p className="text-sm">
-                    <span className="font-semibold">Hospital:</span> {item.hospitalName}
-                  </p>
-
-                  <p className="text-sm">
-                    <span className="font-semibold">Date:</span>{" "}
-                    {new Date(item.date).toLocaleDateString()}
-                  </p>
-
-                  <p className="text-sm">
-                    <span className="font-semibold">Status:</span>{" "}
-                    <span
-                      className={`${
-                        item.status === "Approved"
-                          ? "text-green-600"
-                          : item.status === "Pending"
-                          ? "text-yellow-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {item.status}
-                    </span>
-                  </p>
-
-                </div>
+              <Card key={item._id} className="p-4 border shadow-sm">
+                <p className="font-semibold text-red-600">{item.type}</p>
+                <p>Hospital: {item.hospitalName}</p>
+                <p>Date: {new Date(item.date).toLocaleDateString()}</p>
+                <p>Status: {item.status}</p>
               </Card>
             ))
           )}
         </div>
 
-        {/* ---------------- Pagination ---------------- */}
-        {history.length > 0 && (
+        {/* PAGINATION */}
+        {totalPages > 1 && (
           <Pagination className="mt-4">
             <PaginationContent>
-
-              {/* Prev Button */}
               <PaginationItem>
                 <PaginationPrevious
-                  onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 />
               </PaginationItem>
 
-              {/* Page Numbers */}
               {[...Array(totalPages)].map((_, i) => (
                 <PaginationItem key={i}>
                   <PaginationLink
-                    onClick={() => setCurrentPage(i + 1)}
                     isActive={currentPage === i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
                   >
                     {i + 1}
                   </PaginationLink>
                 </PaginationItem>
               ))}
 
-              {/* Next Button */}
               <PaginationItem>
                 <PaginationNext
                   onClick={() =>
-                    currentPage < totalPages && setCurrentPage(currentPage + 1)
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
                   }
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
-
             </PaginationContent>
           </Pagination>
         )}
-
       </div>
-
     </div>
   );
 }
