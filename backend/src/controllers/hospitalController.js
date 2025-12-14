@@ -211,16 +211,107 @@ exports.getRecipientRequests = async (req, res) => {
 //  Update Recipient Request Status
 exports.updateRequestStatus = async (req, res) => {
   try {
-    const request = await RecipientRequest.findById(req.params.id);
-    if (!request) return res.status(404).json({ message: 'Request not found' });
+    const { status } = req.body;
 
-    request.status = req.body.status || request.status;
-    await request.save();
-    res.json({ message: 'Recipient request updated successfully' });
+    const request = await RecipientRequest.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    // 🚫 Prevent invalid transitions
+    if (request.status === "Rejected") {
+      return res.status(400).json({
+        message: "Rejected request cannot be updated",
+      });
+    }
+
+    // =========================
+    // APPROVE → reduce stock
+    // =========================
+    if (status === "Approved") {
+      if (request.status !== "Pending") {
+        return res.status(400).json({
+          message: "Only pending requests can be approved",
+        });
+      }
+
+      const stock = await BloodStock.findOne({
+        hospital: req.hospital._id,
+        bloodGroup: request.bloodGroup,
+        status: "Available",
+      });
+
+      if (!stock) {
+        return res.status(400).json({
+          message: "Blood stock not available",
+        });
+      }
+
+      if (stock.units < request.quantity) {
+        return res.status(400).json({
+          message: "Insufficient blood stock",
+        });
+      }
+
+      stock.units -= request.quantity;
+      await stock.save();
+
+      request.status = "Approved";
+      await request.save();
+
+      return res.json({
+        success: true,
+        message: "Request approved and stock updated",
+      });
+    }
+
+    // =========================
+    // FULFILLED → status only
+    // =========================
+    if (status === "Fulfilled") {
+      if (request.status !== "Approved") {
+        return res.status(400).json({
+          message: "Only approved requests can be fulfilled",
+        });
+      }
+
+      request.status = "Fulfilled";
+      await request.save();
+
+      return res.json({
+        success: true,
+        message: "Request marked as fulfilled",
+      });
+    }
+
+    // =========================
+    // REJECT
+    // =========================
+    if (status === "Rejected") {
+      if (request.status === "Fulfilled") {
+        return res.status(400).json({
+          message: "Fulfilled request cannot be rejected",
+        });
+      }
+
+      request.status = "Rejected";
+      await request.save();
+
+      return res.json({
+        success: true,
+        message: "Request rejected",
+      });
+    }
+
+    res.status(400).json({ message: "Invalid status" });
+
   } catch (error) {
+    console.error("Update request error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 
 //  Logout Hospital
