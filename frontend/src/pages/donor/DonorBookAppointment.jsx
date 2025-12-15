@@ -9,15 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem
+  SelectItem,
 } from "@/components/ui/select";
 import Loader from "@/components/common/Loader";
 import BookingSuccess from "@/components/common/BookingSuccess";
-import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
 export default function DonorBookAppointment() {
   const [hospitals, setHospitals] = useState([]);
+  const [eligibility, setEligibility] = useState("Eligible");
+
   const [form, setForm] = useState({
     hospitalName: "",
     type: "",
@@ -28,37 +29,36 @@ export default function DonorBookAppointment() {
   const [booking, setBooking] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
 
-  const user = useAuthStore((state) => state.user);
-
-  // Today's date (YYYY-MM-DD)
   const today = new Date().toISOString().split("T")[0];
 
-  // Load hospitals
+  // Load hospitals + eligibility
   useEffect(() => {
-    async function fetchHospitals() {
+    async function loadData() {
       try {
-        const res = await api.get("/donor/hospitals");
-        setHospitals(res.data);
+        const hospitalsRes = await api.get("/donor/hospitals");
+        setHospitals(hospitalsRes.data);
+
+        const dashRes = await api.get("/donor/dashboard");
+        setEligibility(dashRes.data.eligibilityStatus);
       } catch (err) {
-        console.log("Error fetching hospitals:", err);
+        console.log(err);
       } finally {
         setLoading(false);
       }
     }
-    fetchHospitals();
+    loadData();
   }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // ---- VALIDATION: Date Cannot Be in the Past ----
-    if (!form.date) {
-      toast.error("Please select a date!");
+    if (eligibility !== "Eligible") {
+      toast.error("You are not eligible to donate at this time");
       return;
     }
 
-    if (form.date < today) {
-      toast.error("You cannot select a past date!");
+    if (!form.date || form.date < today) {
+      toast.error("Please select a valid future date");
       return;
     }
 
@@ -66,15 +66,10 @@ export default function DonorBookAppointment() {
 
     try {
       await api.post("/donor/appointment", form);
-
-      // OPEN LOTTIE
       setSuccessOpen(true);
-
-      // RESET FORM
       setForm({ hospitalName: "", type: "", date: "" });
     } catch (err) {
-      console.log("Booking Error:", err);
-      toast.error("Failed to book appointment.");
+      toast.error(err.response?.data?.message || "Booking failed");
     } finally {
       setBooking(false);
     }
@@ -83,20 +78,17 @@ export default function DonorBookAppointment() {
   if (loading) return <Loader />;
 
   return (
-    <div className="w-full space-y-8 mt-2 md:mt-6">
+    <div className="w-full space-y-8 mt-4">
 
-      {/* ---------------- Header Section ---------------- */}
-      <header className="py-2 text-center mt-2 mb-1">
-        <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
-          Book Appointment
-        </h1>
-      </header>
+      {/* Header */}
+      <h1 className="text-3xl font-semibold text-center text-red-600">
+        Book Appointment
+      </h1>
 
-      {/* ---------------- Form Card ---------------- */}
-      <div className="w-full flex justify-center">
-        <Card className="w-full max-w-4xl shadow-sm border">
+      <div className="flex justify-center">
+        <Card className="w-full max-w-4xl">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold text-red-600">
+            <CardTitle className="text-red-600">
               Fill Appointment Details
             </CardTitle>
           </CardHeader>
@@ -104,11 +96,18 @@ export default function DonorBookAppointment() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
 
+              {/* Eligibility Warning */}
+              {eligibility !== "Eligible" && (
+                <div className="text-center text-sm text-red-500">
+                  You are currently <b>NOT ELIGIBLE</b> to donate blood.
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                {/* ------------ HOSPITAL ------------ */}
+                {/* Hospital */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Choose Hospital</Label>
+                  <Label>Choose Hospital</Label>
                   <Select
                     value={form.hospitalName}
                     onValueChange={(value) =>
@@ -116,7 +115,7 @@ export default function DonorBookAppointment() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a hospital" />
+                      <SelectValue placeholder="Select hospital" />
                     </SelectTrigger>
                     <SelectContent>
                       {hospitals.map((h) => (
@@ -128,12 +127,14 @@ export default function DonorBookAppointment() {
                   </Select>
                 </div>
 
-                {/* ------------ TYPE ------------ */}
+                {/* Type */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Appointment Type</Label>
+                  <Label>Appointment Type</Label>
                   <Select
                     value={form.type}
-                    onValueChange={(value) => setForm({ ...form, type: value })}
+                    onValueChange={(value) =>
+                      setForm({ ...form, type: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
@@ -145,12 +146,12 @@ export default function DonorBookAppointment() {
                   </Select>
                 </div>
 
-                {/* ------------ DATE ------------ */}
+                {/* Date */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Select Date</Label>
+                  <Label>Select Date</Label>
                   <Input
                     type="date"
-                    min={today}               // prevents selecting earlier days
+                    min={today}
                     value={form.date}
                     onChange={(e) =>
                       setForm({ ...form, date: e.target.value })
@@ -160,24 +161,24 @@ export default function DonorBookAppointment() {
 
               </div>
 
-              {/* ------------ SUBMIT BUTTON ------------ */}
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={booking}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {booking ? "Booking..." : "Book Appointment"}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                disabled={booking || eligibility !== "Eligible"}
+                className="w-full bg-red-600 hover:bg-red-700"
+              >
+                {eligibility !== "Eligible"
+                  ? "Not Eligible to Donate"
+                  : booking
+                  ? "Booking..."
+                  : "Book Appointment"}
+              </Button>
+
             </form>
           </CardContent>
         </Card>
       </div>
 
-      {/* SUCCESS LOTTIE POPUP */}
       <BookingSuccess open={successOpen} onOpenChange={setSuccessOpen} />
-
     </div>
   );
 }
