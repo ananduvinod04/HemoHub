@@ -4,6 +4,7 @@ import api from "../api/axiosInstance";
 export const useAuthStore = create((set) => ({
   user: null,
   role: null,
+  token: null, // 🔥 ADD THIS
 
   login: async (role, credentials) => {
     try {
@@ -19,20 +20,18 @@ export const useAuthStore = create((set) => ({
         email: data.email,
       };
 
-      // Store in Zustand
+      // 🔥 STORE TOKEN
       set({
         user: userData,
         role,
+        token: data.token, // 🔥 IMPORTANT
       });
 
-      // Return full data to Login.jsx
       return {
         success: true,
         user: userData,
         role,
-        raw: data,
       };
-
     } catch (err) {
       return {
         success: false,
@@ -44,10 +43,8 @@ export const useAuthStore = create((set) => ({
   logout: async (role) => {
     try {
       await api.post(`/${role}/logout`, {}, { withCredentials: true });
-
-      set({ user: null, role: null });
-    } catch (error) {
-      console.log("Logout error:", error);
+    } finally {
+      set({ user: null, role: null, token: null }); // CLEAR TOKEN
     }
   },
 }));
