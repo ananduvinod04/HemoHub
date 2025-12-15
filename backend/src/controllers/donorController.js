@@ -98,15 +98,35 @@ exports.updateProfile = async (req, res) => {
 };
 
 // Book Appointment
+// Book Appointment
 exports.bookAppointment = async (req, res) => {
   try {
+    const donor = req.donor;
+
+    // ---------------- ELIGIBILITY CHECK ----------------
+    // Block ONLY donation if donor is not eligible
+    if (
+      donor.eligibilityStatus === false &&
+      req.body.type === "Donation"
+    ) {
+      return res.status(403).json({
+        message: "You are not eligible for blood donation at this time",
+      });
+    }
+
+    // ---------------- CREATE APPOINTMENT ----------------
     const appointment = await Appointment.create({
-      donor: req.donor._id,
+      donor: donor._id,
       hospitalName: req.body.hospitalName,
-      type: req.body.type,
+      type: req.body.type,        // Donation / Blood Test
       date: req.body.date,
     });
-    res.status(201).json(appointment);
+
+    res.status(201).json({
+      message: "Appointment booked successfully",
+      appointment,
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
