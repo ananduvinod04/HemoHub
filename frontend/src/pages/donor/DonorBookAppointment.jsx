@@ -30,11 +30,19 @@ export default function DonorBookAppointment() {
 
   const user = useAuthStore((state) => state.user);
 
+  // eligibility flag (adjust field name if different)
+  const isEligible = user?.eligible === true;
+
   // Today's date (YYYY-MM-DD)
   const today = new Date().toISOString().split("T")[0];
 
-  // Load hospitals
+  // Load hospitals ONLY if eligible
   useEffect(() => {
+    if (!isEligible) {
+      setLoading(false);
+      return;
+    }
+
     async function fetchHospitals() {
       try {
         const res = await api.get("/donor/hospitals");
@@ -45,15 +53,21 @@ export default function DonorBookAppointment() {
         setLoading(false);
       }
     }
+
     fetchHospitals();
-  }, []);
+  }, [isEligible]);
 
   async function handleSubmit(e) {
     e.preventDefault();
 
-    // ---- VALIDATION: Date Cannot Be in the Past ----
-    if (!form.date) {
-      toast.error("Please select a date!");
+    // 🔒 Extra protection
+    if (!isEligible) {
+      toast.error("You are not eligible to book an appointment right now.");
+      return;
+    }
+
+    if (!form.hospitalName || !form.type || !form.date) {
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -67,32 +81,47 @@ export default function DonorBookAppointment() {
     try {
       await api.post("/donor/appointment", form);
 
-      // OPEN LOTTIE
       setSuccessOpen(true);
-
-      // RESET FORM
       setForm({ hospitalName: "", type: "", date: "" });
     } catch (err) {
       console.log("Booking Error:", err);
-      toast.error("Failed to book appointment.");
+      toast.error(
+        err.response?.data?.message || "Failed to book appointment."
+      );
     } finally {
       setBooking(false);
     }
   }
 
+  // ---------------- LOADING ----------------
   if (loading) return <Loader />;
 
+  // ---------------- NOT ELIGIBLE UI ----------------
+  if (!isEligible) {
+    return (
+      <div className="flex justify-center mt-16 px-4">
+        <Card className="max-w-lg w-full p-6 text-center border-red-200 dark:border-red-400">
+          <h2 className="text-xl font-semibold text-red-600 dark:text-red-400">
+            You are not eligible to donate
+          </h2>
+          <p className="mt-3 text-gray-600 dark:text-gray-400">
+            You cannot book an appointment until your eligibility period
+            is completed. Please try again later.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  // ---------------- MAIN FORM ----------------
   return (
     <div className="w-full space-y-8 mt-2 md:mt-6">
-
-      {/* ---------------- Header Section ---------------- */}
-      <header className="py-2 text-center mt-2 mb-1">
+      <header className="py-2 text-center">
         <h1 className="text-3xl font-semibold text-red-600 dark:text-red-400">
           Book Appointment
         </h1>
       </header>
 
-      {/* ---------------- Form Card ---------------- */}
       <div className="w-full flex justify-center">
         <Card className="w-full max-w-4xl shadow-sm border">
           <CardHeader>
@@ -103,12 +132,10 @@ export default function DonorBookAppointment() {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {/* ------------ HOSPITAL ------------ */}
+                {/* HOSPITAL */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Choose Hospital</Label>
+                  <Label>Choose Hospital</Label>
                   <Select
                     value={form.hospitalName}
                     onValueChange={(value) =>
@@ -128,12 +155,14 @@ export default function DonorBookAppointment() {
                   </Select>
                 </div>
 
-                {/* ------------ TYPE ------------ */}
+                {/* TYPE */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Appointment Type</Label>
+                  <Label>Appointment Type</Label>
                   <Select
                     value={form.type}
-                    onValueChange={(value) => setForm({ ...form, type: value })}
+                    onValueChange={(value) =>
+                      setForm({ ...form, type: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
@@ -145,39 +174,33 @@ export default function DonorBookAppointment() {
                   </Select>
                 </div>
 
-                {/* ------------ DATE ------------ */}
+                {/* DATE */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Select Date</Label>
+                  <Label>Select Date</Label>
                   <Input
                     type="date"
-                    min={today}               // prevents selecting earlier days
+                    min={today}
                     value={form.date}
                     onChange={(e) =>
                       setForm({ ...form, date: e.target.value })
                     }
                   />
                 </div>
-
               </div>
 
-              {/* ------------ SUBMIT BUTTON ------------ */}
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  disabled={booking}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {booking ? "Booking..." : "Book Appointment"}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                disabled={booking}
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
+              >
+                {booking ? "Booking..." : "Book Appointment"}
+              </Button>
             </form>
           </CardContent>
         </Card>
       </div>
 
-      {/* SUCCESS LOTTIE POPUP */}
       <BookingSuccess open={successOpen} onOpenChange={setSuccessOpen} />
-
     </div>
   );
 }
