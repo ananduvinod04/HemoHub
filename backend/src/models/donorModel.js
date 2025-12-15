@@ -8,12 +8,18 @@ const donorSchema = new mongoose.Schema({
   bloodGroup: { type: String, required: true },
   age: { type: Number, required: true },
   weight: { type: Number, required: true },
+
   lastDonationDate: { type: Date, default: null },
-  eligibilityStatus: { type: String, default: 'Eligible' }, // Eligible or Not Eligible
+
+  eligibilityStatus: {
+    type: Boolean,
+    default: true, //
+  },
+
   createdAt: { type: Date, default: Date.now },
 });
 
-// Hash password before saving
+// Hash password
 donorSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -21,9 +27,8 @@ donorSchema.pre('save', async function (next) {
   next();
 });
 
-// Compare password
 donorSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model('Donor', donorSchema);
