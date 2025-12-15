@@ -6,19 +6,33 @@ export default function Signup({ onSuccess }) {
   const [role, setRole] = useState("donor");
   const [form, setForm] = useState({});
   const [success, setSuccess] = useState(null);
-  const [error, setError] = useState(null);
 
   const update = (key, value) => setForm({ ...form, [key]: value });
 
   const validateLicense = (license) => /^KL\/[A-Z]{2}\/\d{4}$/.test(license);
 
+  // Password validation
+  const validatePassword = (password) => {
+    // Minimum 5 chars + at least 1 special character
+    const regex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{5,}$/;
+    return regex.test(password);
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    setError(null);
     setSuccess(null);
 
+    // 🔴 Password validation
+    if (!validatePassword(form.password || "")) {
+      toast.error(
+        "Password must be at least 5 characters and contain a special character"
+      );
+      return;
+    }
+
+    // 🔴 Hospital license validation
     if (role === "hospital" && !validateLicense(form.licenseNumber)) {
-      setError("Invalid License Number format. Use: KL/AB/1234");
+      toast.error("Invalid License Number format. Use: KL/AB/1234");
       return;
     }
 
@@ -30,7 +44,7 @@ export default function Signup({ onSuccess }) {
 
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed");
+      toast.error(err.response?.data?.message || "Signup failed");
     }
   };
 
@@ -54,10 +68,7 @@ export default function Signup({ onSuccess }) {
           {["donor", "recipient", "hospital"].map((r) => (
             <label
               key={r}
-              className="
-                flex gap-2 items-center capitalize
-                text-gray-800 dark:text-gray-300
-              "
+              className="flex gap-2 items-center capitalize text-gray-800 dark:text-gray-300"
             >
               <input
                 type="radio"
@@ -71,16 +82,9 @@ export default function Signup({ onSuccess }) {
         </div>
 
         <form onSubmit={submit} className="space-y-3">
-
-          {/* HOSPITAL NAME / NAME */}
+          {/* NAME / HOSPITAL NAME */}
           <input
-            className="
-              border p-2 rounded w-full
-              border-gray-300 dark:border-gray-700
-              bg-white dark:bg-gray-800
-              text-gray-900 dark:text-gray-100
-              placeholder-gray-500 dark:placeholder-gray-400
-            "
+            className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder={role === "hospital" ? "Hospital Name" : "Name"}
             onChange={(e) =>
               role === "hospital"
@@ -92,13 +96,7 @@ export default function Signup({ onSuccess }) {
           {/* EMAIL */}
           <input
             type="email"
-            className="
-              border p-2 rounded w-full
-              border-gray-300 dark:border-gray-700
-              bg-white dark:bg-gray-800
-              text-gray-900 dark:text-gray-100
-              placeholder-gray-500 dark:placeholder-gray-400
-            "
+            className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder="Email"
             onChange={(e) => update("email", e.target.value)}
           />
@@ -106,114 +104,59 @@ export default function Signup({ onSuccess }) {
           {/* PASSWORD */}
           <input
             type="password"
-            className="
-              border p-2 rounded w-full
-              border-gray-300 dark:border-gray-700
-              bg-white dark:bg-gray-800
-              text-gray-900 dark:text-gray-100
-              placeholder-gray-500 dark:placeholder-gray-400
-            "
+            className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             placeholder="Password"
             onChange={(e) => update("password", e.target.value)}
           />
 
-          {/* HOSPITAL SPECIAL FIELDS */}
+          {/* HOSPITAL FIELDS */}
           {role === "hospital" && (
             <>
               <input
-                className={`
-                  border p-2 rounded w-full
-                  bg-white dark:bg-gray-800
-                  text-gray-900 dark:text-gray-100
-                  placeholder-gray-500 dark:placeholder-gray-400
-                  border-gray-300 dark:border-gray-700
-                  ${
-                    form.licenseNumber && !validateLicense(form.licenseNumber)
-                      ? "border-red-500 dark:border-red-400"
-                      : ""
-                  }
-                `}
+                className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="License Number (KL/AB/1234)"
                 onChange={(e) => update("licenseNumber", e.target.value)}
               />
-
               <input
-                className="
-                  border p-2 rounded w-full
-                  border-gray-300 dark:border-gray-700
-                  bg-white dark:bg-gray-800
-                  text-gray-900 dark:text-gray-100
-                  placeholder-gray-500 dark:placeholder-gray-400
-                "
+                className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="Address"
                 onChange={(e) => update("address", e.target.value)}
               />
             </>
           )}
 
-          {/* DONOR + RECIPIENT FIELDS */}
+          {/* DONOR & RECIPIENT FIELDS */}
           {role !== "hospital" && (
             <>
-              {/* AGE */}
               <input
-                className="
-                  border p-2 rounded w-full
-                  border-gray-300 dark:border-gray-700
-                  bg-white dark:bg-gray-800
-                  text-gray-900 dark:text-gray-100
-                  placeholder-gray-500 dark:placeholder-gray-400
-                "
+                className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 placeholder="Age"
                 onChange={(e) => update("age", e.target.value)}
               />
 
-              {/* BLOOD GROUP */}
               <select
-                className="
-                  border p-2 rounded w-full
-                  border-gray-300 dark:border-gray-700
-                  bg-white dark:bg-gray-800
-                  text-gray-900 dark:text-gray-100
-                "
+                className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 onChange={(e) => update("bloodGroup", e.target.value)}
               >
                 <option value="">Select Blood Group</option>
                 {bloodGroups.map((bg) => (
-                  <option
-                    key={bg}
-                    value={bg}
-                    className="dark:bg-gray-800 dark:text-gray-100"
-                  >
+                  <option key={bg} value={bg}>
                     {bg}
                   </option>
                 ))}
               </select>
 
-              {/* RECIPIENT EXTRA FIELD */}
               {role === "recipient" && (
                 <input
-                  className="
-                    border p-2 rounded w-full
-                    border-gray-300 dark:border-gray-700
-                    bg-white dark:bg-gray-800
-                    text-gray-900 dark:text-gray-100
-                    placeholder-gray-500 dark:placeholder-gray-400
-                  "
+                  className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   placeholder="Medical Condition (optional)"
                   onChange={(e) => update("medicalCondition", e.target.value)}
                 />
               )}
 
-              {/* DONOR WEIGHT FIELD */}
               {role === "donor" && (
                 <input
-                  className="
-                    border p-2 rounded w-full
-                    border-gray-300 dark:border-gray-700
-                    bg-white dark:bg-gray-800
-                    text-gray-900 dark:text-gray-100
-                    placeholder-gray-500 dark:placeholder-gray-400
-                  "
+                  className="border p-2 rounded w-full border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   placeholder="Weight (kg)"
                   onChange={(e) => update("weight", e.target.value)}
                 />
@@ -221,24 +164,14 @@ export default function Signup({ onSuccess }) {
             </>
           )}
 
-          {/* ERROR + SUCCESS */}
-          {error && (
-            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-          )}
           {success && (
             <p className="text-green-600 dark:text-green-400 text-sm">
               {success}
             </p>
           )}
 
-          {/* SUBMIT */}
           <button
-            className="
-              w-full bg-red-600 dark:bg-red-500 
-              text-white py-2 rounded-lg
-              hover:bg-red-700 dark:hover:bg-red-600
-              transition
-            "
+            className="w-full bg-red-600 dark:bg-red-500 text-white py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition"
           >
             Create Account
           </button>
